@@ -1,21 +1,26 @@
 "use client";
 
+
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import {getEmails} from "../../hooks/db";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const router = useRouter();
   const [valid, setValid] = useState(true);
+  const emails = getEmails();
+  console.log(emails);
+
   
   // If email is registered:
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    console.log(email);
-    console.log(valid);
-    
+    // console.log(email);
+    // console.log(valid);
+
     // Check if the email is registered
-    if (email == "wheyu@ttu.edu") /*correct format and email is registered */ 
+    if ((await emails).includes(email)) /*correct format and email is registered */ 
     {
       // send reset link via email and redirect back to login page
       setValid(true);
@@ -25,7 +30,6 @@ export default function ForgotPassword() {
     {
       // incorrect email or email format 
       setValid(false);
-      alert("Error: invalid email");
     }
   };
 
