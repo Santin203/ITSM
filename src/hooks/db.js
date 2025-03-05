@@ -1,5 +1,23 @@
-import { collection, getDocs, getFirestore, Firestore, query, where } from "firebase/firestore";
+import { getAuth, sendPasswordResetEmail } from "firebase/auth";
+import { collection, getDocs, getFirestore } from "firebase/firestore";
 import { app } from "../firebaseConfig";
+
+const auth = getAuth();
+
+export function sendResetEmail(email) {
+  sendPasswordResetEmail(auth, email)
+  .then(() => {
+    // Password reset email sent!
+    console.log("email sent");
+  })
+  .catch((error) => {
+    const errorCode = error.code;
+    const errorMessage = error.message;
+    console.log(errorCode, errorMessage);
+  });
+}
+
+
 
 const db = getFirestore(app);
 
