@@ -27,3 +27,10 @@ export async function getEmails() {
     const emails = usersSnapshot.docs.map(doc => doc.data()["email"]);
     return emails;
   }
+
+export async function getUsersData() {
+    const usersCol = collection(db, "Users");
+    const usersSnapshot = await getDocs(usersCol);
+    const usersData = usersSnapshot.docs.map(doc => doc.data());
+    return usersData;
+  }
