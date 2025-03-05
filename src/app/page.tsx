@@ -1,16 +1,31 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "../hooks/useAuth";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { login, user, logout } = useAuth();
+  const router = useRouter();
 
   const handleLogin = async () => {
-    await login(email, password);
+    try {
+      const userCredential = await login(email, password);
+
+      if (userCredential) {
+        localStorage.setItem("emailForMFA", email);
+        router.push("/mfa");
+      } else {
+        throw new Error("User authentication failed.");
+      }
+    } catch (error) {
+      console.error("Login failed:", error);
+    }
+    
   };
+  
 
   return (
     <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-gray-50 to-gray-300">
