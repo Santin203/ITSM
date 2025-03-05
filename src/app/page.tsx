@@ -2,6 +2,7 @@
 
 /* ----- Login page ----- */
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 
@@ -9,6 +10,9 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { login, user, logout } = useAuth();
+
+  // Initialize router
+  const router = useRouter(); // --> to be able to redirect to forgot password if needed
 
   // State for validation (added for handling wrong credentials)
   const [valid, setValid] = useState(true);
@@ -92,6 +96,17 @@ export default function Login() {
                   Invalid email or password
                 </span>
               )}
+
+              {/* Forgot Password Hyperlink */}
+              <div className="mb-5 text-right">
+                <button
+                  type="button" // prevents form submission
+                  onClick={() => router.push("/forgotpassword")} // redirect to forgotpassword page
+                  className="text-blue-500 text-sm hover:underline focus:outline-none"
+                >
+                  Forgot password?
+                </button>
+              </div>
 
               <button
                 type="submit"
