@@ -5,9 +5,11 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
+import {getUsersData} from '../hooks/db.js'
 
 export default function Login() {
-  const [email, setEmail] = useState("");
+  //const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const { login, user, logout } = useAuth();
 
@@ -18,18 +20,31 @@ export default function Login() {
   const [valid, setValid] = useState(true);
   
   const handleLogin = async () => {
-    try {
-      await login(email, password);
-      setValid(true); // Reset validation on success
-    } catch (error: any) {
-      //console.error("Login failed:", error.message); //doing it like this creates an error pop-up
-      console.log("Login failed:", error.message)
-      setValid(false);
+
+    async function getEmailFromUser(username: string) {
+      const usersData = await getUsersData();
       
-      // Handle Firebase-specific error codes if needed
-      //if (error.code !== "auth/invalid-credential") {
-      //  alert("An unexpected error occurred. Please try again.");
-      //}
+      //find user with matching username (=== for strict equality)
+      const currentUser = usersData.find(tempUser => tempUser.username === username);
+
+      return currentUser ? currentUser.email : null; //return email if found
+    }
+
+    const email = await getEmailFromUser(username); // must await because function is async
+
+    if (email === null) {
+      setValid(false); // false on failure
+    } 
+    else {
+      try {
+        await login(email, password);
+        console.log("Successful login")
+        setValid(true); // true on success
+      } 
+      catch (error: any) {
+        console.log("Login failed:", error.message);
+        setValid(false); // false on failure
+      }
     }
   };
 
@@ -58,17 +73,17 @@ export default function Login() {
                 handleLogin();
               }}
             >
-              {/* Email Box */}
+              {/* Username Box */}
               <div className="mb-5">
-                <label htmlFor="email" className="block mb-2 text-gray-700 font-medium">
-                  Email
+                <label htmlFor="username" className="block mb-2 text-gray-700 font-medium">
+                  Username
                 </label>
                 <input
-                  id="email"
-                  type="email" //makes browser check for @
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
+                  id="username"
+                  type="username" //makes browser check for @
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Enter your username"
                   className={`w-full border ${valid ? "border-gray-300" : "border-red-500"} px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 text-black`}
                   required
                 />
@@ -93,7 +108,7 @@ export default function Login() {
               {/* Error Message */}
               {!valid && (
                 <span className="text-sm text-red-500 block mb-3">
-                  Invalid email or password
+                  Invalid username or password
                 </span>
               )}
 
