@@ -16,15 +16,6 @@ export function useAuth() {
     return () => unsubscribe();
   }, []);
 
-  //original login function written by Richard
- /*const login = async (email, password) => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (error) {
-      console.error("Login failed:", error.message);
-    }
-  };*/
-
   const login = async (email, password) => {
     try {
       return await signInWithEmailAndPassword(auth, email, password);
