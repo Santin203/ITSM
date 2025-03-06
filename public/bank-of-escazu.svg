@@ -1,0 +1,22 @@
+<svg
+  viewBox="0 0 200 80"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <!-- Shift the rectangle down to y=20 -->
+  <rect x="20" y="20" width="50" height="40" rx="4" fill="#203E91" />
+
+  <!-- Shift the polygon so the top vertex is at y=10, not y=0 -->
+  <polygon points="20,30 45,10 70,30" fill="#4F46E5" />
+
+  <!-- Move text further down (y=45) -->
+  <text
+    x="90"
+    y="45"
+    font-family="Arial, sans-serif"
+    font-weight="bold"
+    font-size="18"
+    fill="#1E293B"
+  >
+    Bank of Escazú
+  </text>
+</svg>
