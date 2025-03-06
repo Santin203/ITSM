@@ -43,16 +43,15 @@ export default function Login() {
     else {
       setLoading(true); // Start loading state
       try {
-        await login(email, password);
+        
+        const userCredential = await login(email, password);
         console.log("Successful login")
 
-        // Redirect based on role
-        // NOTE: this is a placeholder -> should first redirect to two-factor authentication
-        if (role === "Admin") {
-          router.push("/admin");
-        } 
-        else {
-          router.push("/main");
+        if (userCredential) {
+          localStorage.setItem("emailForMFA", email);
+          router.push("/mfa");
+        } else {
+          throw new Error("User authentication failed.");
         }
       } 
       catch (error: any) {
@@ -61,7 +60,9 @@ export default function Login() {
         setLoading(false); // stop loading on error
       }
     }
+    
   };
+  
 
   return (
     <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-gray-50 to-gray-300">
