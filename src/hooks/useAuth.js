@@ -18,11 +18,13 @@ export function useAuth() {
 
   const login = async (email, password) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      return userCredential;
     } catch (error) {
-      console.error("Login failed:", error.message);
+      //console.error("Login failed:", error.message);
+      throw error; // Rethrow the error so handleLogin functioncan catch it 
     }
-  };
+};
 
   const logout = async () => {
     await signOut(auth);

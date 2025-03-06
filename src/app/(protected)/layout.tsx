@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 interface LayoutProps {
@@ -8,6 +8,13 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
+    const [isAdmin, setIsAdmin] = useState<boolean | null>(null); // State to track admin status
+    const [isOpen, setIsOpen] = useState(false); // Toggle state for the submenu
+
+    useEffect(() => {
+        setIsAdmin(true);
+      }, []);
+
     return (
         <div className="flex min-h-screen font-sans bg-gray-100">
             <aside className="w-64 bg-white p-6 shadow-md border-r border-gray-200">
@@ -15,12 +22,35 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     <h1 className="text-2xl font-bold text-gray-800">ITSM</h1>
                 </div>
                 <nav>
+                    
                     <ul className="list-none p-0 m-0">
-                        <li className="mb-4">
-                            <Link href="/dashboard" className="text-gray-800 font-medium no-underline">
-                                Dashboard
+                        {isAdmin && (<li className="mb-4">
+                            <Link href="/admindashboard" className="text-gray-800 font-medium no-underline">
+                                Admin Dashboard
                             </Link>
                         </li>
+                        )}
+                        {isAdmin && (<li className="mb-4">
+                            <button
+                            onClick={() => setIsOpen(!isOpen)}
+                            className="w-full text-left text-gray-800 font-medium no-underline flex justify-between items-center"
+                            >
+                            User Options
+                            <span>{isOpen ? "<" : ">"}</span>
+                            </button>
+
+                            <ul className={`list-none p-1 m-3 transition-all duration-300 ${isOpen ? "block" : "hidden"}`}>
+                                <li>
+                                    <Link href="/admin/viewusers" className="text-gray-800 font-medium no-underline">
+                                    View Users
+                                    </Link>
+                                </li>
+                                <li><Link href="/admin/grantaccess" className="text-gray-800 font-medium no-underline">
+                                    Grant Access
+                                    </Link>
+                                </li>
+                            </ul>
+                        </li>)}
                         <li className="mb-4">
                             <Link href="/tickets" className="text-gray-800 font-medium no-underline">
                                 Tickets
