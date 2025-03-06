@@ -36,6 +36,7 @@ export default function Login() {
     const currentUserData = await getCurrentUserData(username); // must await because function is async
     const email = currentUserData ? currentUserData.email : null;
     const role = currentUserData ? currentUserData.rol : null;
+    localStorage.setItem("role", role);
 
     if (email === null) {
       setValid(false); // false on failure
@@ -77,7 +78,6 @@ export default function Login() {
   
             {user ? (
               <div className="text-center">
-                <p className="text-green-500">Logged in as {user?.email}</p>
                 <button
                   onClick={logout}
                   className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors shadow-md mt-4"
