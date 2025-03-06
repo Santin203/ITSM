@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
 import {
-  HomeIcon,
-  ClipboardIcon,
-  UsersIcon,
-  UserGroupIcon,
   BellIcon,
+  ClipboardIcon,
+  HomeIcon,
+  UserGroupIcon,
+  UsersIcon,
   XMarkIcon
 } from "@heroicons/react/24/outline";
+import Link from "next/link";
+import { useState } from "react";
 
 export default function US30Page() {
   const [submenuOpen, setSubmenuOpen] = useState(false);
@@ -31,7 +31,7 @@ export default function US30Page() {
           justifyContent: "center", 
           padding: "10px 30px",
           borderBottom: "1px solid #E5E7EB",
-          //background: "linear-gradient(to right, #a8bf00 0%, #ffffff 60%)",
+          background: "white", //"linear-gradient(to right, #a8bf00 0%, #ffffff 60%)"
           borderRadius: "0 0 8px 8px",
           position: "relative",
         }}

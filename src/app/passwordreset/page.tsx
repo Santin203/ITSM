@@ -1,14 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { resetPassword, sleep } from "@/hooks/db";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [match, setMatch] = useState(true);
   const [submitted, setSubmitted] = useState(false);
+  const [code, setCode] = useState("");
   const router = useRouter();
+
+  useEffect(() => {
+    const currentUrl = window.location.href;
+    const urlCode = currentUrl.split("&")[1].split("=")[1];
+    setCode(urlCode);
+    console.log(urlCode);
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -22,7 +31,9 @@ export default function ResetPassword() {
       return;
     }
     setMatch(true);
-    setTimeout(() => router.push("/"), 1000); // Redirect to login page after 1 second
+    resetPassword(code, password);
+    await sleep(1000); // Redirect to login page after 1 second
+    router.push("/");
   };
 
   return (

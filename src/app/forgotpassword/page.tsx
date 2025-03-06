@@ -3,14 +3,14 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { getEmails, sendResetEmail } from "../../hooks/db";
+import { getEmails, sendResetEmail, sleep } from "../../hooks/db";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const router = useRouter();
   const [valid, setValid] = useState(true);
   const emails = getEmails();
-  console.log(emails);
+  // console.log(emails);
 
   
   // If email is registered:
@@ -25,8 +25,8 @@ export default function ForgotPassword() {
       // send reset link via email and redirect back to login page
       setValid(true);
       sendResetEmail(email);
-      localStorage.setItem("resetEmail", email);
       alert("Reset link sent to the email: " + email);
+      await sleep(1000);
       router.back();
     } 
     else 
