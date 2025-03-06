@@ -23,8 +23,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false); 
   
   const handleLogin = async () => {
-    setLoading(true); // Start loading state
-
     /* --- Inner Function Definition --- */
     async function getCurrentUserData(username: string) {
       const usersData = await getUsersData();
@@ -41,9 +39,9 @@ export default function Login() {
 
     if (email === null) {
       setValid(false); // false on failure
-      setLoading(false); // stop loading on error
     } 
     else {
+      setLoading(true); // Start loading state
       try {
         await login(email, password);
         console.log("Successful login")
