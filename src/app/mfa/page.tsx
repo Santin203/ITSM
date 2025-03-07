@@ -115,18 +115,19 @@ export default function Login() {
               <div className="flex gap-4">
                 <label className="flex items-center text-gray-700">
                   <input
-                    type="radio"
-                    value="email"
-                    checked={deliveryMethod === "email"}
-                    onChange={() => setDeliveryMethod("email")}
-                    className="mr-2"
+                  type="radio"
+                  value="email"
+                  checked={deliveryMethod === "email"}
+                  onChange={() => setDeliveryMethod("email")}
+                  className="mr-2"
                   />
-                  Email
+                  Email: {email.replace(/(.{2})(.*)(?=@)/, (gp1, gp2, gp3) => {
+                  return gp2 + "*".repeat(gp3.length);
+                  })}
                 </label>
               </div>
             </div>
 
-            <p className="text-gray-700 mb-4">We will send the OTP to {email}</p>
 
             <button
               type="button"
@@ -150,6 +151,9 @@ export default function Login() {
                 className={`w-full p-2 border rounded-lg text-gray-700 ${otpInvalid ? 'border-red-500' : 'border-gray-300'}`}
               />
             </div>
+            {otpInvalid && (
+              <p className="text-red-500 text-sm mt-2">Invalid OTP. Please try again.</p>
+            )}
             <button
               type="button"
               onClick={() => handleVerifyOtp(otp, email)}
@@ -163,6 +167,7 @@ export default function Login() {
         {otpError && (
           <p className="text-red-500 text-sm mt-2">Error sending OTP. Please try again.</p>
         )}
+
       </div>
     </div>
   );
