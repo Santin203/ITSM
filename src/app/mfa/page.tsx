@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { getCurrUserData } from '../../hooks/db';
+import { auth } from '../../firebaseConfig';
 
 export default function Login() {
   const [deliveryMethod, setDeliveryMethod] = useState("email");
@@ -11,11 +13,12 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const router = useRouter();
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const storedEmail = localStorage.getItem("emailForMFA");
-    if (storedEmail) {
-      setEmail(storedEmail);
+    const userEmail = auth.currentUser?.email
+    if (userEmail) {
+      setEmail(userEmail);
     }
 
     if (typeof window !== "undefined" && window.location.search.includes("oobCode")) {
@@ -23,7 +26,16 @@ export default function Login() {
       const otpLink = window.location.href;
       handleVerifyOtp(otpLink, params.get("email"));
     }
-  }, []);
+
+    const fetch = async (): Promise<void> => {    
+      const data = await getCurrUserData();
+      if(data)
+      {
+          setIsAdmin(data["rol"] == "admin");
+      }
+    }
+    fetch();
+  });
 
   const handleSendOtp = async () => {
     if (!email) {
@@ -37,7 +49,7 @@ export default function Login() {
     if (response.success) {
       setOtpSent(true);
       // Store email in localStorage for later verification
-      localStorage.setItem("emailForMFA", email);
+      // localStorage.setItem("emailForMFA", email);
     } else {
       setOtpError(true);
     }
@@ -57,7 +69,15 @@ export default function Login() {
     const response = await verifyOtpEmail(email, otp);
     console.log(response);
     if (response && response.message === "OTP verified successfully") {
-      router.push("/main");
+      if(isAdmin)
+      {
+        router.push("/admin");
+      }
+      else
+      {
+        router.push("/main");
+      }
+      
     } else {
       setOtpInvalid(true);
     }

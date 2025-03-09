@@ -1,8 +1,7 @@
-import { getAuth, sendPasswordResetEmail, confirmPasswordReset } from "firebase/auth";
-import { collection, getDocs, getFirestore } from "firebase/firestore";
-import { app } from "../firebaseConfig";
+import { confirmPasswordReset, sendPasswordResetEmail, signOut } from "firebase/auth";
+import { collection, doc, getDoc, getDocs, getFirestore } from "firebase/firestore";
+import { app, auth } from "../firebaseConfig";
 
-const auth = getAuth();
 const db = getFirestore(app);
 
 export async function sleep(ms) {
@@ -49,3 +48,21 @@ export function resetPassword(code, newPassword) {
       console.log(errorCode, errorMessage);
     });
   }
+
+export async function logout() {
+  await signOut(auth);
+}
+
+export async function getCurrUserData() 
+{
+  const currUser = auth.currentUser;
+  if (currUser) {
+    const docRef = doc(db, "Users", currUser.uid);
+    const docSnap = await getDoc(docRef);
+    const data = docSnap.data();
+    if(data)
+    {
+      return data;
+    }
+  }
+}
