@@ -58,7 +58,7 @@ const MainPage: React.FC = () => {
   const sortedUsers = [...filteredUsers].sort((a, b) => {
     for (const col in order) {
       if (order[col as keyof Order] !== 0) {
-        if (typeof (a as any)[col] === "string") {
+        if (typeof (a as any)[col] === "string" && typeof (b as any)[col] == "string") {
           return order[col as keyof Order] * ((a as any)[col].toLowerCase() > (b as any)[col].toLowerCase() ? 1 : -1);
         } else {
           return order[col as keyof Order] * ((a as any)[col] > (b as any)[col] ? 1 : -1);
