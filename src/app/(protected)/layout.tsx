@@ -37,7 +37,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 const name = data["name"];
                 const img = data["picture_url"];
                 setUserData({name, img});
-                setIsAdmin(data["rol"] == "admin");
+                setIsAdmin(data["rol"] == "Admin");
             }
         }
         fetch();
