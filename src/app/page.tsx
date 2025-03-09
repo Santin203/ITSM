@@ -35,8 +35,6 @@ export default function Login() {
 
     const currentUserData = await getCurrentUserData(username); // must await because function is async
     const email = currentUserData ? currentUserData.email : null;
-    const role = currentUserData ? currentUserData.rol : null;
-    localStorage.setItem("role", role);
 
     if (email === null) {
       setValid(false); // false on failure
@@ -49,7 +47,6 @@ export default function Login() {
         console.log("Successful login")
 
         if (userCredential) {
-          localStorage.setItem("emailForMFA", email);
           router.push("/mfa");
         } else {
           throw new Error("User authentication failed.");
