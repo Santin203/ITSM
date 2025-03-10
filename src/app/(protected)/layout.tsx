@@ -218,11 +218,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     position: "relative",
                     }}
                 >
-                    {/* Centered Bank of Escazú Logo */}
+                    {/* Centered Bank of Escazú Logo 
+                    /bank-of-escazu.svg*/}
                     <img
-                    src="/bank-of-escazu.svg" 
+                    src="https://icons.veryicon.com/png/o/miscellaneous/quick/bank-111.png" 
                     alt="Bank of Escazú Logo"
-                    style={{ width: "80px", height: "auto" }}
+                    style={{ width: "60px", height: "auto" }}
                     />
 
                     {/* RIGHT: Bell, Avatar, Name, Logout (absolute so the logo stays centered) */}
