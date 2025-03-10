@@ -7,11 +7,11 @@ import {
     UsersIcon
 } from "@heroicons/react/24/outline";
 import Link from 'next/link';
-import React, { use, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { auth } from '../../firebaseConfig';
 import { getCurrUserData } from '../../hooks/db';
 import { useAuth } from '../../hooks/useAuth';
-import { auth } from '../../firebaseConfig';
-
+import { createCookie } from "@/hooks/cookies";
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -38,6 +38,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 const img = data["picture_url"];
                 setUserData({name, img});
                 setIsAdmin(data["rol"] == "Admin");
+                createCookie("role", data["rol"]);
             }
         }
         fetch();
@@ -89,14 +90,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <nav>
                     {/* Dashboard (? Not in stories might delete)  */}
                     <ul className="list-none p-0 m-0">
-                        {isAdmin && (<li style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
+                        <li style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
                             <HomeIcon style={{ width: "20px", color: "#FFFFFF" }} />
-                            <Link href="/admin" style={{ color: "#FFFFFF", textDecoration: "none" }}>
+                            <Link href={isAdmin?"/admin":"/user"} style={{ color: "#FFFFFF", textDecoration: "none" }}>
                                 Dashboard
                             </Link>
                         </li>
-                        )}
-                        
                         {/* User Options for Admin */}
                         {isAdmin && (<li
                             style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
@@ -125,14 +124,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                 </li>
                             </ul>
                             )}
-
-                        {isAdmin != null && !isAdmin && (<li style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
-                            <HomeIcon style={{ width: "20px", color: "#FFFFFF" }} />
-                            <Link href="/main" style={{ color: "#FFFFFF", textDecoration: "none" }}>
-                                Dashboard
-                            </Link>
-                        </li>
-                        )}
                         {/* Incidents */}
                         {isAdmin != null && !isAdmin && (<li                     
                             style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
@@ -147,7 +138,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                     style={{ padding: "8px", cursor: "pointer" }}
                                     // onClick={() => setEnterIncidentModal(true)}
                                 >
-                                    <Link href="/enterincident" className="text-white font-medium no-underline">
+                                    <Link href="/user/enterincident" className="text-white font-medium no-underline">
                                         Enter Incidents
                                     </Link>
                                 </li>
@@ -155,7 +146,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                     style={{ padding: "10px", cursor: "pointer" }}
                                     // onClick={() => setTrackIncidentModal(true)}
                                 >
-                                    <Link href="/main/trackincidents" className="text-white font-medium no-underline">
+                                    <Link href="/user/trackincidents" className="text-white font-medium no-underline">
                                         Track Incidents
                                     </Link>
                                 </li>
@@ -218,11 +209,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     position: "relative",
                     }}
                 >
-                    {/* Centered Bank of Escazú Logo */}
+                    {/* Centered Bank of Escazú Logo 
+                    /bank-of-escazu.svg*/}
                     <img
-                    src="/bank-of-escazu.svg" 
+                    src="https://icons.veryicon.com/png/o/miscellaneous/quick/bank-111.png" 
                     alt="Bank of Escazú Logo"
-                    style={{ width: "80px", height: "auto" }}
+                    style={{ width: "60px", height: "auto" }}
                     />
 
                     {/* RIGHT: Bell, Avatar, Name, Logout (absolute so the logo stays centered) */}

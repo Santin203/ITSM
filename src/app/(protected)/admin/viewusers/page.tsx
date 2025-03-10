@@ -103,11 +103,11 @@ const MainPage: React.FC = () => {
       <form>
           <fieldset>
           
-            <legend className="text-black dark:text-gray-200 font-semibold text-lg mb-4">Filter Users</legend>
+            <legend className="text-black  font-semibold text-lg mb-4">Filter Users</legend>
             <div className="flex space-x-4 mt-2"> 
             <div>
             <label htmlFor="name" className="block mb-2">
-            <p className="text-black dark:text-gray-200 mt-2">Search for Name:</p>
+            <p className="text-black ">Search for Name:</p>
             </label>
             <input
               type="text"
@@ -120,7 +120,7 @@ const MainPage: React.FC = () => {
             </div>
             <div>
             <label htmlFor="last" className="block mb-2">
-            <p className="text-black dark:text-gray-200 mt-2">Search for Last Name:</p>
+            <p className="text-black ">Search for Last Name:</p>
             </label>
             <input
               type="text"
@@ -133,7 +133,7 @@ const MainPage: React.FC = () => {
             </div>
             <div>
             <label htmlFor="id" className="block mb-2">
-            <p className="text-black dark:text-gray-200 mt-2">Search for ID:</p>
+            <p className="text-black  mt-2">Search for ID:</p>
             </label>
             <input
               type="text"
@@ -146,7 +146,7 @@ const MainPage: React.FC = () => {
             </div>
             <div>
             <label htmlFor="rol" className="block mb-2">
-            <p className="text-black dark:text-gray-200 mt-2">Search for Role:</p>
+            <p className="text-black  mt-2">Search for Role:</p>
             </label>
             <input
               type="text"
@@ -162,8 +162,8 @@ const MainPage: React.FC = () => {
         </form>
   
       </div>
-      <main className="overflow-x-auto bg-white shadow-md rounded-lg p-6 dark:bg-gray-800">
-      <table className="min-w-full text-gray-800 dark:text-gray-200">
+      <main className="overflow-x-auto bg-white shadow-md rounded-lg p-6 ">
+      <table className="min-w-full text-gray-800 ">
       <thead>
             <tr>
               <th className="px-4 py-2 text-left">Name<button
@@ -198,7 +198,7 @@ const MainPage: React.FC = () => {
           </thead>
         <tbody>
             {sortedUsers.map((u, index) => (
-              <tr key={index} className="border-t border-gray-200 dark:border-gray-700">
+              <tr key={index} className="border-t border-gray-200 ">
                 <td className="px-4 py-2">{u.name}</td>
                 <td className="px-4 py-2">{u.lastname}</td>
                 <td className="px-4 py-2">{u.id}</td>
