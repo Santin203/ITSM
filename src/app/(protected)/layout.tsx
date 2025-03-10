@@ -147,7 +147,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                     style={{ padding: "8px", cursor: "pointer" }}
                                     // onClick={() => setEnterIncidentModal(true)}
                                 >
-                                    <Link href="/main/enterincidents" className="text-white font-medium no-underline">
+                                    <Link href="/enterincident" className="text-white font-medium no-underline">
                                         Enter Incidents
                                     </Link>
                                 </li>
