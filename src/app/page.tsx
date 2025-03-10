@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import {getUsersData} from '../hooks/db.js'
+import { createCookie } from "../hooks/cookies";
+
 
 export default function Login() {
   //const [email, setEmail] = useState("");
@@ -15,7 +17,7 @@ export default function Login() {
 
   // Initialize router
   const router = useRouter(); // --> to be able to redirect page to forgot password or appropriate main page
-
+  
   // State for validation (added for handling wrong credentials)
   const [valid, setValid] = useState(true);
 
@@ -35,6 +37,7 @@ export default function Login() {
 
     const currentUserData = await getCurrentUserData(username); // must await because function is async
     const email = currentUserData ? currentUserData.email : null;
+    const role = currentUserData ? currentUserData.rol : null;
 
     if (email === null) {
       setValid(false); // false on failure
@@ -45,6 +48,10 @@ export default function Login() {
         
         const userCredential = await login(email, password);
         console.log("Successful login")
+          
+        await createCookie("role", role); // create cookie for user role
+        await createCookie("loggedin", "true"); // create cookie for logged in user
+       
 
         if (userCredential) {
           router.push("/mfa");

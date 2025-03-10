@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
-import { auth } from "../firebaseConfig";
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
+import { useEffect, useState } from "react";
+import { auth } from "../firebaseConfig";
+import { deleteCookie } from "../hooks/cookies";
 
 export function useAuth() {
   const [user, setUser] = useState(null); 
@@ -27,6 +28,9 @@ export function useAuth() {
 };
 
   const logout = async () => {
+    await deleteCookie("loggedin");
+    await deleteCookie("mfaed");
+    await deleteCookie("role");
     await signOut(auth);
   };
 

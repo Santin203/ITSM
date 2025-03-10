@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrUserData } from '../../hooks/db';
 import { auth } from '../../firebaseConfig';
+import { createCookie } from "../../hooks/cookies";
 
 export default function Login() {
   const [deliveryMethod, setDeliveryMethod] = useState("email");
@@ -42,6 +43,7 @@ export default function Login() {
       setOtpError(true);
       return;
     }
+    setOtpError(false);
 
     // Sending the OTP to the backend (this will trigger your Redis-backed OTP generation)
     const response = await sendOtpEmail(email);
@@ -65,17 +67,18 @@ export default function Login() {
       setOtpError(true);
       return;
     }
-
+    setOtpError(false)
     const response = await verifyOtpEmail(email, otp);
     console.log(response);
     if (response && response.message === "OTP verified successfully") {
+      await createCookie("mfaed", "true");
       if(isAdmin)
       {
         router.push("/admin");
       }
       else
       {
-        router.push("/main");
+        router.push("/user");
       }
       
     } else {
