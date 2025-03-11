@@ -2,6 +2,7 @@ import { confirmPasswordReset, sendPasswordResetEmail, signOut, getAuth, onAuthS
 import {collection, doc, getDoc, getDocs, getFirestore, query,where, writeBatch } from "firebase/firestore";
 import { app, auth, db } from "../firebaseConfig";
 import { deleteCookie } from "../hooks/cookies";
+import { type } from "os";
 
 // Get a new write batch
 
@@ -111,10 +112,9 @@ export async function getCurrUserIncidentsData()
     const data = docSnap.data();
     if(data)
     {
-      const usersData = docSnap.data()["id"];
-    
+      const usersData = data["id"];
       const incidentsRef = collection(db, "Incidents");
-      const usersIncidentsCol = query(incidentsRef, where("reporter_id", "==", Number(usersData[0])));
+      const usersIncidentsCol = query(incidentsRef, where("reporter_id", "==", Number(usersData)));
       const usersIncidentsSnapshot = await getDocs(usersIncidentsCol);
       const incidentsData = usersIncidentsSnapshot.docs.map(doc => [doc.data(), doc.id]);
       if(incidentsData)

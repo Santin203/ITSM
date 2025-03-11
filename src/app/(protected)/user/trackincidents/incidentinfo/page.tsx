@@ -134,7 +134,7 @@ const MainPage: React.FC = () => {
         <h1 className="text-[2rem] font-bold">Incident Details</h1>
       </div>
       {incidents.map((u, index) => (
-              <ul key={index} className="border-t border-gray-200 dark:border-gray-700">
+              <ul key={index} className="text-black bgborder-t border-gray-200 ">
                 <li className="px-4 py-2"><b>Title:</b> {u.title}</li>
                 <li className="px-4 py-2"><b>Description:</b> {u.description}</li>
                 <li className="px-4 py-2"><b>Incident ID: </b> {u.incident_id}</li>
@@ -152,7 +152,7 @@ const MainPage: React.FC = () => {
       <div className="text-black p-4">
         <h1 className="text-[2rem] font-bold">Workflow</h1>
         {flows.length > 0 && flows.map((u, index) => (
-              <ul key={index} className="border-t border-gray-200 dark:border-gray-700">
+              <ul key={index} className="border-t border-gray-200 ">
                 <li className="px-4 py-2"><b>Order:</b> {u.order}</li>
                 <li className="px-4 py-2"><b>Description:</b> {u.description}</li>
                 <li className="px-4 py-2"><b>Incident ID:</b> {u.incident_id}</li>

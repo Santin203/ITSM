@@ -149,11 +149,11 @@ const MainPage: React.FC = () => {
       <form>
           <fieldset>
           
-            <legend className="text-black dark:text-gray-200 font-semibold text-lg mb-4">Filter Incidents</legend>
+            <legend className="text-black font-semibold text-lg mb-4">Filter Incidents</legend>
             <div className="flex space-x-4 mt-2"> 
               <div>
               <label htmlFor="title" className="block mb-2">
-              <p className="text-black dark:text-gray-200 mt-2">Search for Title:</p>
+              <p className="text-black mt-2">Search for Title:</p>
               </label>
               <input
                 type="text"
@@ -166,7 +166,7 @@ const MainPage: React.FC = () => {
               </div>
               <div>
               <label htmlFor="incident_status" className="block mb-2">
-              <p className="text-black dark:text-gray-200 mt-2">Search for Incident Status:</p>
+              <p className="text-black mt-2">Search for Incident Status:</p>
               </label>
               <input
                 type="text"
@@ -180,7 +180,7 @@ const MainPage: React.FC = () => {
             </div>
             <div className="flex space-x-4 mt-2">
                 <div>
-                  <label className="block text dark:text-gray-700 mt-2">Search for Report Date:</label>
+                  <label className="block text-black mt-2">Search for Report Date:</label>
                   <input
                     type="date"
                     className="text-black border rounded px-4 py-2 mb-4 w-medium"
@@ -193,8 +193,8 @@ const MainPage: React.FC = () => {
         </form>
   
       </div>
-      <main className="overflow-x-auto bg-white shadow-md rounded-lg p-6 dark:bg-gray-800">
-      <table className="min-w-full text-gray-800 dark:text-gray-200">
+      <main className="overflow-x-auto bg-white shadow-md rounded-lg p-6 ">
+      <table className="min-w-full text-gray-800 ">
       <thead>
             <tr>
               <th className="px-4 py-2 text-left">Title<button
@@ -224,7 +224,7 @@ const MainPage: React.FC = () => {
           </thead>
         <tbody>
             {sortedIncidents.map((u, index) => (
-              <tr key={index} className="border-t border-gray-200 dark:border-gray-700">
+              <tr key={index} className="border-t border-gray-200 ">
                 <td className="px-4 py-2">{u.title}</td>
                 <td className="px-4 py-2">{String(u.incident_report_date)}</td>
                 <td className="px-4 py-2">{u.incident_status}</td>
