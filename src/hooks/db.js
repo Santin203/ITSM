@@ -1,6 +1,7 @@
-import { confirmPasswordReset, sendPasswordResetEmail, signOut } from "firebase/auth";
+import { confirmPasswordReset, sendPasswordResetEmail, signOut, getAuth, onAuthStateChanged } from "firebase/auth";
 import {collection, doc, getDoc, getDocs, getFirestore, query,where, writeBatch } from "firebase/firestore";
 import { app, auth } from "../firebaseConfig";
+
 
 // Get a new write batch
 
@@ -58,7 +59,6 @@ export async function setUserRole(newRole, userDocID) {
   try{
     const batch = writeBatch(db);
     const docRef = doc(db, "Users", String(userDocID));
-    console.log(newRole, String(userDocID));
     batch.update(docRef, {"rol": String(newRole)});
     await batch.commit();
     return(0);
@@ -97,5 +97,53 @@ export async function getCurrUserData()
     {
       return data;
     }
+  }
+}
+
+export async function getCurrUserIncidentsData() 
+{
+  const currUser = auth.currentUser;
+  if (currUser) {
+    const uid = currUser.uid;
+    const docRef = doc(db, "Users", uid);
+    const docSnap = await getDoc(docRef);
+    const data = docSnap.data();
+    if(data)
+    {
+      const usersData = docSnap.data()["id"];
+    
+      const incidentsRef = collection(db, "Incidents");
+      const usersIncidentsCol = query(incidentsRef, where("reporter_id", "==", Number(usersData[0])));
+      const usersIncidentsSnapshot = await getDocs(usersIncidentsCol);
+      const incidentsData = usersIncidentsSnapshot.docs.map(doc => [doc.data(), doc.id]);
+      if(incidentsData)
+      {
+        return incidentsData;
+      }
+    } 
+  }
+}
+
+export async function getIncidentwithId(i_id)
+{
+  const incidentsRef = collection(db, "Incidents");
+  const usersIncidentsCol = query(incidentsRef, where("incident_id", "==", i_id));
+  const usersIncidentsSnapshot = await getDocs(usersIncidentsCol);
+  const incidentsData = usersIncidentsSnapshot.docs.map(doc => doc.data());
+  if(incidentsData)
+  {
+    return incidentsData;
+  }
+}
+
+export async function getFlowithId(i_id)
+{
+  const incidentsRef = collection(db, "Workflow");
+  const usersIncidentsCol = query(incidentsRef, where("incident_id", "==", i_id));
+  const incidentFlowsSnapshot = await getDocs(usersIncidentsCol);
+  const flowsData = incidentFlowsSnapshot.docs.map(doc => doc.data());
+  if(flowsData)
+  {
+    return flowsData;
   }
 }
