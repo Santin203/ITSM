@@ -1,8 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { BellIcon } from "@heroicons/react/24/outline";
+import { useEffect, useState } from "react";
 
 export default function IncidentEntryPage() {
   const router = useRouter();
@@ -18,7 +16,7 @@ export default function IncidentEntryPage() {
   }, []);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+    <div style={{ display: "flex", flexDirection: "column"}} className="text-black">
       {/* Main Content */}
       <div style={{ padding: "40px", fontFamily: "Arial, sans-serif" }}>
         <h2 style={{ fontSize: "20px", fontWeight: "bold", textAlign: "center" }}>
