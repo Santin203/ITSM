@@ -1,11 +1,9 @@
 import { confirmPasswordReset, sendPasswordResetEmail, signOut, getAuth, onAuthStateChanged } from "firebase/auth";
 import {collection, doc, getDoc, getDocs, getFirestore, query,where, writeBatch } from "firebase/firestore";
-import { app, auth } from "../firebaseConfig";
-
+import { app, auth, db } from "../firebaseConfig";
+import { deleteCookie } from "../hooks/cookies";
 
 // Get a new write batch
-
-const db = getFirestore(app);
 
 export async function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -83,6 +81,9 @@ export function resetPassword(code, newPassword) {
   }
 
 export async function logout() {
+  deleteCookie("loggedin");
+  deleteCookie("mfaed");
+  deleteCookie("role");
   await signOut(auth);
 }
 

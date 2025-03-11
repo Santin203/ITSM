@@ -27,7 +27,7 @@ export default function ForgotPassword() {
       sendResetEmail(email);
       alert("Reset link sent to the email: " + email);
       await sleep(1000);
-      router.back();
+      router.push("/");
     } 
     else 
     {
