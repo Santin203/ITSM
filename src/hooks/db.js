@@ -148,3 +148,10 @@ export async function getFlowithId(i_id)
     return flowsData;
   }
 }
+
+export async function getAllIncidents() {
+  const incidentsRef = collection(db, "Incidents");
+  const incidentsSnapshot = await getDocs(incidentsRef);
+  const incidentsData = incidentsSnapshot.docs.map(doc => [doc.data(), doc.id]);
+  return incidentsData;
+}

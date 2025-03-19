@@ -24,7 +24,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const [userData, setUserData] = useState({name:"", img:""});
     const {logout} = useAuth();
     const currUser = auth.currentUser; 
-    console.log("Current User:", currUser);
+    //console.log("Current User:", currUser);
     
     
     useEffect(() => {
@@ -45,9 +45,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         }
     });
     
-    console.log(isAdmin);
+    //console.log(isAdmin);
     const handleLogout = async () => {
-        console.log("Current User:", currUser);
+        //console.log("Current User:", currUser);
         await logout();
         if(currUser == null) 
         {
