@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getCurrUserData } from '../../hooks/db';
 import { auth } from '../../firebaseConfig';
 import { createCookie } from "../../hooks/cookies";
+import { sendEmail } from "@/hooks/emails";
 
 export default function Login() {
   const [deliveryMethod, setDeliveryMethod] = useState("email");
@@ -72,6 +73,7 @@ export default function Login() {
     console.log(response);
     if (response && response.message === "OTP verified successfully") {
       await createCookie("mfaed", "true");
+      await sendEmail(email, "Login Successful", "Login successful! Welcome to ITSM!");
       if(isAdmin)
       {
         router.push("/admin");
