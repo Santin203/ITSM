@@ -1,7 +1,5 @@
-import { useState } from "react";
-
 "use client";
-
+import { useState } from "react";
 
 export default function RequestRequirementForm() {
     const [requirement, setRequirement] = useState("");
@@ -12,7 +10,7 @@ export default function RequestRequirementForm() {
     };
 
     return (
-        <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
+        <div style={{ padding: "20px", fontFamily: "Arial, sans-serif", color: "#000" }}>
             <h2 style={{ textAlign: "center", fontWeight: "bold" }}>
                 Request Requirement Form
             </h2>
