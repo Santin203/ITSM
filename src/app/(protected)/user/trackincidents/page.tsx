@@ -34,10 +34,11 @@ const MainPage: React.FC = () => {
   const [incidents, setIncidents] = useState<Incident>([]);
   const [order, setOrder] = useState<Order>({'title':0,'incident_status': 0,'incident_report_date': 0,'reporter_id':0});
   const [date, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [status, setStatus] = useState("");
 
   const [formData, setFormData] = useState({
     title: "",
-    incident_status: "",
     incident_report_date:""
   });
   const [currUser, setCurrUser] = useState(auth.currentUser); // Start with initial auth state
@@ -98,12 +99,17 @@ const MainPage: React.FC = () => {
     }
   });
 
+  const compareDates = (d1:string, d2:string, d3:string) => {
+    return(d1 <= d2 && d2 <= d3);
+  }
+console.log(status);
   // Filtered data
   const filteredUsers = incidents.filter((u) =>
         (formData.title === "" || u.title == formData.title) &&
-        (formData.incident_status === "" || String(u.incident_status) === String(formData.incident_status)) &&
-        (date === "" || u.incident_report_date == date)
+        (status === "" || String(u.incident_status) === String(status)) &&
+        (date === "" && endDate === "" || compareDates(date, u.incident_report_date, endDate)) //&& u.incident_report_date <= endDate)
       );
+  
 
   // Ordenación dinámica
   const sortedIncidents = [...filteredUsers].sort((a, b) => {
@@ -140,12 +146,13 @@ const MainPage: React.FC = () => {
         setFormData((prev) => ({ ...prev, [name]: value }));
       };
 
+
         return (
     <div>
-      <div className="text-black p-4">
+      <div key="1" className="text-black p-4">
         <h1 className="text-[2rem] font-bold">My Incidents</h1>
       </div>
-      <div>
+      <div key="2">
       <form>
           <fieldset>
           
@@ -164,23 +171,28 @@ const MainPage: React.FC = () => {
                 className="text-black border rounded px-4 py-2 mb-4 w-medium"
               />
               </div>
+              </div>
+              
               <div>
               <label htmlFor="incident_status" className="block mb-2">
               <p className="text-black mt-2">Search for Incident Status:</p>
               </label>
-              <input
-                type="text"
-                id="incident_status"
-                name="incident_status"
-                onChange={handleChange}
-                value={formData.incident_status}
-                className="text-black border rounded px-4 py-2 mb-4 w-medium"
-              />
+                <select
+                  className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <option defaultChecked value="">All</option>
+                  <option value="Sent">Sent</option>
+                  <option value="Assigned">Assigned</option>
+                  <option value="Escalated">Escalated</option>
+                  <option value="Completed">Completed</option>
+                </select>
               </div>
-            </div>
+            
             <div className="flex space-x-4 mt-2">
                 <div>
-                  <label className="block text-black mt-2">Search for Report Date:</label>
+                  <label className="block text dark:text-gray-700 mt-2">Initial Date</label>
                   <input
                     type="date"
                     className="text-black border rounded px-4 py-2 mb-4 w-medium"
@@ -188,6 +200,15 @@ const MainPage: React.FC = () => {
                     onChange={(e) => setStartDate(e.target.value)}
                   />
                 </div>
+                <div>
+                <label className="block text dark:text-gray-700 mt-2">End Date</label>
+                <input
+                  type="date"
+                  className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
               </div>
         </fieldset> 
         </form>
