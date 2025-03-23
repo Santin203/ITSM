@@ -406,6 +406,100 @@ const MainPage: React.FC = () => {
 
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Contact Information for the Business Administrator (Functional Unit Manager)</h1>
               <table
+              key=
+              {index} style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+            >
+              <tbody>
+                <tr>
+                  <td
+                    style={{
+                      padding: "40px",
+                      border: "1px solid #ccc",
+                      width: "300px", // First column takes less space
+                      fontWeight: "bold",
+                    }}
+                  >
+                    First Name, Last Name, Middle Initial
+                  </td>
+                  <td
+                    style={{
+                      padding: "10px",
+                      border: "1px solid #ccc",
+                      width: "100%",
+                    }}
+                  >
+                 {u.contact_first_name} {u.contact_last_name}
+                  </td>
+                </tr>
+                <tr>
+                <td
+                  style={{
+                    padding: "20px",
+                    border: "1px solid #ccc",
+                    width: "200px", // First column takes less space
+                    fontWeight: "bold",
+                  }}
+                >
+                  Role or Position
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "100%",
+                  }}
+                > 
+                  {u.contact_role}
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style={{
+                    padding: "20px",
+                    border: "1px solid #ccc",
+                    width: "200px", // First column takes less space
+                    fontWeight: "bold",
+                  }}
+                >
+                  Phone Number and Extension
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "100%",
+                  }}
+                >
+                {u.contact_phone}  
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style={{
+                    padding: "20px",
+                    border: "1px solid #ccc",
+                    width: "200px", // First column takes less space
+                    fontWeight: "bold",
+                  }}
+                >
+                  Email Address
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "100%",
+                  }}
+                >
+                  {u.contact_email}
+                </td>
+                
+              </tr>
+              </tbody>
+              </table>
+
+              <h1 style={{ marginTop: "20px", fontWeight: "bold" }}>Communication Strategy</h1>
+              <table
               style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
@@ -417,246 +511,35 @@ const MainPage: React.FC = () => {
                       width: "100%",
                     }}
                   >
-                  {u.dependencies}
+                  {u.communication_strategy}
                   </td>
                 </tr>
               </tbody>
               </table>
-              
+
+              <h1 style={{ marginTop: "20px", fontWeight: "bold" }}>Supporting_documents</h1>
+              <table
+              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+            >
+              <tbody>
+                <tr>
+                  <td
+                    style={{
+                      padding: "10px",
+                      border: "1px solid #ccc",
+                      width: "100%",
+                    }}
+                  >
+                  
+                  </td>
+                </tr>
+              </tbody>
+              </table>
+              <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Requirement Submit Date: {u.requirement_submit_date}</h1>
               </div>
               ))}
 
-        
-      {requirements.map((u, index) => (
-              <div key='1'
-              style={{
-                marginTop: "20px",
-                fontSize: "18px"
-              }}
-            > 
-        <h3 style={{ marginTop: "20px", fontWeight: "bold" }}>Requirement Details</h3>
-        <table
-          style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}
-        >
-          <tbody>
-            <tr key={index}>
-                <td
-                  style={{
-                    padding: "20px",
-                    border: "1px solid #ccc",
-                    width: "250px",  // Increase the width
-                    fontWeight: "bold",
-                    whiteSpace: "nowrap", // Prevent wrapping
-                  }}
-                >
-                  User Details:
-                </td>
-                <td
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ccc",
-                    width: "100%",
-                  }}
-                >
-                  {u.brief_description}
-                </td>
-                </tr>
-                <tr>
-                <td
-                  style={{
-                    padding: "20px",
-                    border: "1px solid #ccc",
-                    width: "250px",  // Increase the width
-                    fontWeight: "bold",
-                    whiteSpace: "nowrap", // Prevent wrapping
-                  }}
-                >
-                  Reported by:
-                </td>
-                <td
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ccc",
-                    width: "100%",
-                  }}
-                >
-                  {u.submitter_id}
-                </td>
-                </tr>
-                <tr>
-                <td
-                  style={{
-                    padding: "20px",
-                    border: "1px solid #ccc",
-                    width: "250px",  // Increase the width
-                    fontWeight: "bold",
-                    whiteSpace: "nowrap", // Prevent wrapping
-                  }}
-                >
-                  Requirement Description:
-                </td>
-                <td
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ccc",
-                    width: "100%",
-                  }}
-                >
-                  {u.brief_description}
-                </td>
-                </tr>
-                <tr>
-                <td
-                  style={{
-                    padding: "20px",
-                    border: "1px solid #ccc",
-                    width: "250px",  // Increase the width
-                    fontWeight: "bold",
-                    whiteSpace: "nowrap", // Prevent wrapping
-                  }}
-                >
-                  Business Impact:
-                </td>
-                <td
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ccc",
-                    width: "100%",
-                  }}
-                >
-                  {u.communication_strategy}
-                </td>
-                </tr>
-                <tr>
-                <td
-                  style={{
-                    padding: "20px",
-                    border: "1px solid #ccc",
-                    width: "250px",  // Increase the width
-                    fontWeight: "bold",
-                    whiteSpace: "nowrap", // Prevent wrapping
-                  }}
-                >
-                  Root Cause:
-                </td>
-                <td
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ccc",
-                    width: "100%",
-                  }}
-                >
-                  {u.data_requirement}
-                </td>
-                </tr>
-                <tr>
-                <td
-                  style={{
-                    padding: "20px",
-                    border: "1px solid #ccc",
-                    width: "250px",  // Increase the width
-                    fontWeight: "bold",
-                    whiteSpace: "nowrap", // Prevent wrapping
-                  }}
-                >
-                  Incident Status:
-                </td>
-                <td
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ccc",
-                    width: "100%",
-                  }}
-                >
-                  {u.dependencies}
-                </td>
-                </tr>
-                <tr>
-                <td
-                  style={{
-                    padding: "20px",
-                    border: "1px solid #ccc",
-                    width: "250px",  // Increase the width
-                    fontWeight: "bold",
-                    whiteSpace: "nowrap", // Prevent wrapping
-                  }}
-                >
-                  Request Goals/Objectives:
-                </td>
-                <td
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ccc",
-                    width: "100%",
-                  }}
-                >
-                  {u.request_goals}
-                </td>
-                </tr>
-                <tr>
-                <td
-                  style={{
-                    padding: "20px",
-                    border: "1px solid #ccc",
-                    width: "250px",  // Increase the width
-                    fontWeight: "bold",
-                    whiteSpace: "nowrap", // Prevent wrapping
-                  }}
-                >
-                  Dependencies:
-                </td>
-                <td
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ccc",
-                    width: "100%",
-                  }}
-                >
-                  {u.dependencies}
-                </td>
-              </tr>
-          </tbody>
-        </table>
-        
-        <h3 style={{ marginTop: "20px", fontWeight: "bold" }}>
-        Incident Date and Time
-      </h3>
-      <table
-        style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}
-      >
-        <tbody>
-        <tr>
-                <td
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ccc",
-                    width: "200px",  // Increase the width
-                    fontWeight: "bold",
-                    whiteSpace: "nowrap", // Prevent wrapping
-                  }}
-                >
-                Requirement Submit Date
-                </td>
-                <td
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ccc",
-                    width: "100%",
-                  }}
-                >
-                  {u.requirement_submit_date}
-                </td>
-              </tr>
-          </tbody>
-        </table>
-        {/* Incident Details Description */}
-        {u.workarounds_description !== "" && (
-        <h3 style={{ marginTop: "20px", fontWeight: "bold" }}>
-          Workaround Description: {u.workarounds_description}
-        </h3>
-      )}
-        </div>
-      ))}
+       
       <div style={{ display: "flex", flexDirection: "column"}} className="text-black">
           {/* Main Content */}
           <div style={{ padding: "40px", fontFamily: "Arial, sans-serif" }}>
