@@ -21,6 +21,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const [userSubmenu, setUserSubmenu] = useState(false);
     const [isAdmin, setIsAdmin] = useState<boolean | null>(null); // State to track admin status
     const [incidentsSubmenu, setIncidentsSubmenu] = useState(false); // Toggle state for the submenu
+    const [requirementsSubmenu, setRequirementsSubmenu] = useState(false); // Toggle state for the submenu
     const [userData, setUserData] = useState({name:"", img:""});
     const {logout} = useAuth();
     const currUser = auth.currentUser; 
@@ -151,7 +152,35 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                     </Link>
                                 </li>
                             </ul>
-                            )}   
+                            )}
+                        {/* Requirements */}
+                        {isAdmin != null && !isAdmin && (<li                     
+                            style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
+                            onClick={() => setRequirementsSubmenu(!requirementsSubmenu)}
+                            >
+                            <ClipboardIcon style={{ width: "20px", color: "#FFFFFF" }} />
+                            <span>Requirements ▼</span>
+                        </li>)}
+                        {requirementsSubmenu && (
+                            <ul style={{ paddingLeft: "32px" }}>
+                                <li
+                                    style={{ padding: "8px", cursor: "pointer" }}
+                                    // onClick={() => setEnterIncidentModal(true)}
+                                >
+                                    <Link href="/user/enterrequirements" className="text-white font-medium no-underline">
+                                        Enter Requirements
+                                    </Link>
+                                </li>
+                                <li
+                                    style={{ padding: "10px", cursor: "pointer" }}
+                                    // onClick={() => setTrackIncidentModal(true)}
+                                >
+                                    <Link href="/user/trackrequirements" className="text-white font-medium no-underline">
+                                        Track Requirements
+                                    </Link>
+                                </li>
+                            </ul>
+                            )}      
                         {/* Not Yet Needed to Implement */}
                         {/* <li className="mb-4">
                             <Link href="/reports" className="text-gray-800 font-medium no-underline">
