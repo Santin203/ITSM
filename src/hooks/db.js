@@ -198,3 +198,10 @@ export async function getRequirementwithId(i_id)
     return requirementsData;
   }
 }
+
+export async function getAllIncidents() {
+  const incidentsRef = collection(db, "Incidents");
+  const incidentsSnapshot = await getDocs(incidentsRef);
+  const incidentsData = incidentsSnapshot.docs.map(doc => [doc.data(), doc.id]);
+  return incidentsData;
+}
