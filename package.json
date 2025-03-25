@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
-    "autoprefixer": "^10.4.20",
+    "autoprefixer": "^10.4.21",
     "crypto": "^1.0.1",
     "firebase": "^11.4.0",
     "firebase-admin": "^13.1.0",
