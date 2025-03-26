@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {getFlowithId, getIncidentwithId, getCurrUserData, updateIncidentStatus} from '../../../../../hooks/db.js'
 import { auth } from '../../../../../firebaseConfig.js';
+import { updateWorkflowManager } from '../../../../../hooks/db.js';
+
 
 type Incident = {
   reporter_id:number,
@@ -195,33 +197,41 @@ const MainPage: React.FC = () => {
     if (!currUser || !isITSupport || !isAssignedToMe) {
       return;
     }
-    
+  
     const incidentId = localStorage.getItem("incident_id");
     if (!incidentId) {
       return;
     }
-    
+  
     // Check if resolution details were provided
     if (!resolutionDetails.trim()) {
       alert("Please provide resolution details before resolving the incident.");
       return;
     }
-    
-    const confirmResolve = window.confirm("Are you sure you want to mark this incident as resolved?");
+  
+    const confirmResolve = window.confirm("Are you sure you want to mark this incident as completed?");
     if (!confirmResolve) {
       return;
     }
-    
+  
     setIsUpdating(true);
-    
+  
     try {
-      const result = await updateIncidentStatus(incidentId, "Resolved", resolutionDetails);
+      // Update the incident's status to "Completed"
+      const result = await updateIncidentStatus(incidentId, "Completed", resolutionDetails);
+  
       if (result === 0) {
         setUpdateSuccess(true);
         setShowResolutionForm(false);
         setResolutionDetails("");
-        
-        // Refresh the incident data
+  
+        // Also update the workflow manager_id
+        const itId = incidents[0]?.it_id;
+        if (itId) {
+          await updateWorkflowManager(incidentId, itId);
+        }
+  
+        // Refresh data
         await handleFetchAll();
         await handleFetchFlow();
       } else {
@@ -232,13 +242,14 @@ const MainPage: React.FC = () => {
       setUpdateSuccess(false);
     } finally {
       setIsUpdating(false);
-      
+  
       // Clear the status message after 3 seconds
       setTimeout(() => {
         setUpdateSuccess(null);
       }, 3000);
     }
   };
+  
 
   // Check if incident can be resolved (not already resolved or completed)
   const canResolveIncident = () => {
@@ -635,35 +646,36 @@ const MainPage: React.FC = () => {
           </ul> 
       }
     </div>
-      <p>
-        <button
-        onClick={()=>handleRouter()}
-        className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-        type="button"
-        >
-        Back
-        </button>
-        </p>
+      {/* Resolution form for IT support users */}
+      {canResolveIncident() && (
+        <div className="px-4 mt-4">
+          <p className="mb-4"> 
+            <button
+            onClick={()=>handleRouter()}
+            className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            type="button"
+            >
+            Back
+            </button>
+          </p>
         {/* Display status update message */}
       {updateSuccess !== null && (
         <div className={`mx-4 p-3 rounded ${updateSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
           {updateSuccess 
-            ? "Incident successfully marked as resolved!" 
+            ? "Incident successfully marked as completed!" 
             : "Failed to update incident status. Please try again."}
         </div>
       )}
-
-      {/* Resolution form for IT support users */}
-      {canResolveIncident() && (
-        <div className="px-4 mt-4">
           {!showResolutionForm ? (
-            <button
-              onClick={handleShowResolutionForm}
-              className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 mb-4"
-              type="button"
-            >
-              Resolve Incident
-            </button>
+            <p className="mb-4"> 
+              <button
+                onClick={handleShowResolutionForm}
+                className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                type="button"
+              >
+                Resolve Incident
+              </button>
+            </p>
           ) : (
             <div className="bg-gray-50 p-4 rounded-md border border-gray-200 mb-4">
               <label htmlFor="resolution-details" className="block text-black font-medium mb-2">

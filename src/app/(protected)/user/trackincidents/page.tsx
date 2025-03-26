@@ -42,6 +42,7 @@ const MainPage: React.FC = () => {
   const [status, setStatus] = useState("");
   const [isITSupport, setIsITSupport] = useState(false);
   const [incidentTypeFilter, setIncidentTypeFilter] = useState("all"); // "all", "sent", or "received"
+  const [roleChecked, setRoleChecked] = useState(false);// Wait for role to be determined
 
   const [formData, setFormData] = useState({
     title: "",
@@ -51,13 +52,20 @@ const MainPage: React.FC = () => {
   const [currUser, setCurrUser] = useState(auth.currentUser);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      console.log("Auth state changed:", user);
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       setCurrUser(user);
+      if (user) {
+        const userData = await getCurrUserData();
+        if (userData && userData.rol === "IT") {
+          setIsITSupport(true);
+        }
+      }
+      setRoleChecked(true);
     });
-
+  
     return () => unsubscribe();
   }, []);
+  
 
   // Check if user is IT support
   useEffect(() => {
@@ -66,10 +74,12 @@ const MainPage: React.FC = () => {
       if (userData && userData.rol === "IT") {
         setIsITSupport(true);
       }
+      setRoleChecked(true); // NEW: mark role as loaded
     };
-    
+  
     checkUserRole();
   }, []);
+  
 
   const handleFetchAll = async (): Promise<void> => {
     if (isITSupport) {
@@ -211,6 +221,8 @@ console.log(status);
     }
     return "My Incidents";
   };
+
+  if (!roleChecked) return <div className="text-black p-4">Loading...</div>; //  Prevent render until role is known
 
 
   return (

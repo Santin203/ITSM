@@ -1,8 +1,9 @@
 import { confirmPasswordReset, sendPasswordResetEmail, signOut, getAuth, onAuthStateChanged } from "firebase/auth";
-import {collection, doc, getDoc, getDocs, getFirestore, query,where, writeBatch } from "firebase/firestore";
+import {collection, doc, getDoc, getDocs, getFirestore, query,where, writeBatch, updateDoc } from "firebase/firestore";
 import { app, auth, db } from "../firebaseConfig";
 import { deleteCookie } from "../hooks/cookies";
 import { type } from "os";
+
 
 // Get a new write batch
 
@@ -211,6 +212,7 @@ export async function updateIncidentStatus(incidentId, newStatus, resolutionDeta
     // Get the first matching document (should be only one)
     const incidentDoc = incidentSnapshot.docs[0];
     const incidentDocId = incidentDoc.id;
+    const incidentData = incidentDoc.data();
     
     // Create current timestamp for the resolution date
     const currentTime = new Date();
@@ -255,8 +257,8 @@ export async function updateIncidentStatus(incidentId, newStatus, resolutionDeta
         
         // Add resolution details to the description if provided
         let description = `Status changed to: ${newStatus}`;
-        if (newStatus === "Resolved") {
-          description += ` (Resolution date: ${currentTime.toLocaleString()})`;
+        if (newStatus === "Completed") {
+          description += `. (Resolution date: ${currentTime.toLocaleString()}).`;
           
           // Include resolution details in the workflow
           if (resolutionDetails && resolutionDetails.trim() !== '') {
@@ -270,7 +272,8 @@ export async function updateIncidentStatus(incidentId, newStatus, resolutionDeta
           incident_status: newStatus,
           order: maxOrder + 1,
           reporter_id: Number(userData.id),
-          time_of_incident: currentTime
+          time_of_incident: currentTime,
+          manager_id: Number(incidentData.it_id)
         });
       }
     }
@@ -338,3 +341,33 @@ export async function getAllIncidents() {
   const incidentsData = incidentsSnapshot.docs.map(doc => [doc.data(), doc.id]);
   return incidentsData;
 }
+
+
+// Set manager_id in the latest step (highest order) of the flow
+export const updateWorkflowManager = async (incident_id, manager_id) => {
+  const q = query(
+    collection(db, "workflow"),
+    where("incident_id", "==", Number(incident_id))
+  );
+  const snapshot = await getDocs(q);
+
+  let latestDoc = null;
+  let latestOrder = -1;
+
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    if (data.order > latestOrder) {
+      latestOrder = data.order;
+      latestDoc = docSnap;
+    }
+  });
+
+  if (latestDoc) {
+    await updateDoc(doc(db, "workflow", latestDoc.id), {
+      manager_id: manager_id
+    });
+    console.log("Workflow updated with manager_id");
+  } else {
+    console.warn("No workflow steps found for this incident.");
+  }
+};
