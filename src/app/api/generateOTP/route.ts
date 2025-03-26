@@ -1,19 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Redis from 'ioredis';
 import crypto from 'crypto';
-import nodemailer from 'nodemailer';
+import { sendEmail } from './../../../hooks/emails';
+// import nodemailer from 'nodemailer';
 
 
 const redis = new Redis(process.env.REDIS_URL!);
-
-// Initialize nodemailer transporter
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
 
 // Generate and send OTP
 export async function POST(req: NextRequest) {
@@ -32,12 +24,7 @@ export async function POST(req: NextRequest) {
     await redis.setex(email, 300, otp);
 
     // Send OTP to user's email
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: 'Your OTP Code',
-      text: `Your OTP is ${otp}. It will expire in 5 minutes.`,
-    });
+    await sendEmail(email, 'Your OTP Code', `Your OTP is ${otp}. It will expire in 5 minutes.`);
 
     // Send success response
     return NextResponse.json({ success: true, message: 'OTP sent to email' });

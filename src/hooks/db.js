@@ -109,6 +109,7 @@ export async function getCurrUserIncidentsData()
     const uid = currUser.uid;
     const docRef = doc(db, "Users", uid);
     const docSnap = await getDoc(docRef);
+    
     const data = docSnap.data();
     if(data)
     {
@@ -281,4 +282,59 @@ export async function updateIncidentStatus(incidentId, newStatus, resolutionDeta
     console.error("Error updating incident status:", error);
     return 1; // Error
   }
+}
+export async function getRequirementFlowithId(i_id)
+{
+  const incidentsRef = collection(db, "Requirement_Workflow");
+  const usersIncidentsCol = query(incidentsRef, where("requirement_id", "==", i_id));
+  const incidentFlowsSnapshot = await getDocs(usersIncidentsCol);
+  const flowsData = incidentFlowsSnapshot.docs.map(doc => doc.data());
+  if(flowsData)
+  {
+    return flowsData;
+  }
+}
+
+export async function getCurrUserRequirementsData() 
+{
+  const currUser = auth.currentUser;
+  if (currUser) {
+    const uid = currUser.uid;
+    const docRef = doc(db, "Users", uid);
+    const docSnap = await getDoc(docRef);
+    
+    const data = docSnap.data();
+    if(data)
+    {
+      const usersData = docSnap.data()["id"];
+
+      const requirementsRef = collection(db, "Requirements");
+      const usersRequirementsCol = query(requirementsRef, where("submitter_id", "==", Number(usersData)));
+      const usersRequirementsSnapshot = await getDocs(usersRequirementsCol);
+      const requirementsData = usersRequirementsSnapshot.docs.map(doc => [doc.data(), doc.id]);
+      if(requirementsData)
+      {
+        return requirementsData;
+      }
+    } 
+  }
+}
+
+export async function getRequirementwithId(i_id)
+{
+  const requirementsRef = collection(db, "Requirements");
+  const usersRequirementsCol = query(requirementsRef, where("requirement_id", "==", i_id));
+  const usersRequirementsSnapshot = await getDocs(usersRequirementsCol);
+  const requirementsData = usersRequirementsSnapshot.docs.map(doc => doc.data());
+  if(requirementsData)
+  {
+    return requirementsData;
+  }
+}
+
+export async function getAllIncidents() {
+  const incidentsRef = collection(db, "Incidents");
+  const incidentsSnapshot = await getDocs(incidentsRef);
+  const incidentsData = incidentsSnapshot.docs.map(doc => [doc.data(), doc.id]);
+  return incidentsData;
 }

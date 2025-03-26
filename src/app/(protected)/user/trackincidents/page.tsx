@@ -38,12 +38,13 @@ const MainPage: React.FC = () => {
     'reporter_id': 0
   });
   const [date, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [status, setStatus] = useState("");
   const [isITSupport, setIsITSupport] = useState(false);
   const [incidentTypeFilter, setIncidentTypeFilter] = useState("all"); // "all", "sent", or "received"
 
   const [formData, setFormData] = useState({
     title: "",
-    incident_status: "",
     incident_report_date: ""
   });
   
@@ -145,6 +146,10 @@ const MainPage: React.FC = () => {
     }
   });
 
+  const compareDates = (d1:string, d2:string, d3:string) => {
+    return(d1 <= d2 && d2 <= d3);
+  }
+console.log(status);
   const filteredIncidents = incidents.filter((incident) => {
     if (isITSupport && incidentTypeFilter !== "all") {
       if (incidentTypeFilter === "sent" && incident.incidentType !== "sent") return false;
@@ -152,9 +157,10 @@ const MainPage: React.FC = () => {
     }
 
     const matchesTitle = formData.title === "" || incident.title.toLowerCase().includes(formData.title.toLowerCase());
-    const matchesStatus = formData.incident_status === "" || String(incident.incident_status) === String(formData.incident_status);
-    const matchesDate = date === "" || incident.incident_report_date === date;
-    
+    const matchesStatus = status === "" || String(incident.incident_status) === String(status);
+    const matchesDate = date === "" && endDate === "" || compareDates(date, incident.incident_report_date, endDate) //&& incident.incident_report_date =<= endDate;
+      
+
     return matchesTitle && matchesStatus && matchesDate;
   });
 
@@ -206,14 +212,14 @@ const MainPage: React.FC = () => {
     return "My Incidents";
   };
 
+
   return (
     <div>
-      <div className="text-black p-4">
+      <div key="1" className="text-black p-4">
         <h1 className="text-[2rem] font-bold">{getPageTitle()}</h1>
       </div>
-      
-      <div>
-        <form>
+      <div key="2">
+      <form>
           <fieldset>
             <legend className="text-black font-semibold text-lg mb-4">Filter Incidents</legend>
             
@@ -275,33 +281,47 @@ const MainPage: React.FC = () => {
                   className="text-black border rounded px-4 py-2 mb-4 w-medium"
                 />
               </div>
-              <div>
-                <label htmlFor="incident_status" className="block mb-2">
-                  <p className="text-black mt-2">Search for Incident Status:</p>
-                </label>
-                <input
-                  type="text"
-                  id="incident_status"
-                  name="incident_status"
-                  onChange={handleChange}
-                  value={formData.incident_status}
-                  className="text-black border rounded px-4 py-2 mb-4 w-medium"
-                />
               </div>
-            </div>
+              
+              <div>
+              <label htmlFor="incident_status" className="block mb-2">
+              <p className="text-black mt-2">Search for Incident Status:</p>
+              </label>
+                <select
+                  className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <option defaultChecked value="">All</option>
+                  <option value="Sent">Sent</option>
+                  <option value="Assigned">Assigned</option>
+                  <option value="Escalated">Escalated</option>
+                  <option value="Completed">Completed</option>
+                </select>
+              </div>
+            
             
             <div className="flex space-x-4 mt-2">
-              <div>
-                <label className="block text-black mt-2">Search for Report Date:</label>
+                <div>
+                  <label className="block text dark:text-gray-700 mt-2">Initial Date</label>
+                  <input
+                    type="date"
+                    className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                    value={date}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                <label className="block text dark:text-gray-700 mt-2">End Date</label>
                 <input
                   type="date"
                   className="text-black border rounded px-4 py-2 mb-4 w-medium"
-                  value={date}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
                 />
               </div>
-            </div>
-          </fieldset>
+              </div>
+        </fieldset> 
         </form>
       </div>
       
