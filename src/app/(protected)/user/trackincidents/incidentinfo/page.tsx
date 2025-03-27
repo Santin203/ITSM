@@ -209,7 +209,7 @@ const MainPage: React.FC = () => {
       return;
     }
   
-    const confirmResolve = window.confirm("Are you sure you want to mark this incident as completed?");
+    const confirmResolve = window.confirm("Are you sure you want to mark this incident as resolved?");
     if (!confirmResolve) {
       return;
     }
@@ -217,8 +217,8 @@ const MainPage: React.FC = () => {
     setIsUpdating(true);
   
     try {
-      // Update the incident's status to "Completed"
-      const result = await updateIncidentStatus(incidentId, "Completed", resolutionDetails);
+      // Update the incident's status to "Resolved"
+      const result = await updateIncidentStatus(incidentId, "Resolved", resolutionDetails);
   
       if (result === 0) {
         setUpdateSuccess(true);
@@ -251,15 +251,14 @@ const MainPage: React.FC = () => {
   };
   
 
-  // Check if incident can be resolved (not already resolved or completed)
+  // Check if incident can be resolved (not already resolved)
   const canResolveIncident = () => {
     if (!incidents.length) return false;
     
     const incident = incidents[0];
     return isITSupport && 
            isAssignedToMe && 
-           incident.incident_status !== "Resolved" && 
-           incident.incident_status !== "Completed";
+           incident.incident_status !== "Resolved";
   };
 
   return(
@@ -648,21 +647,13 @@ const MainPage: React.FC = () => {
     </div>
       {/* Resolution form for IT support users */}
       {canResolveIncident() && (
-        <div className="px-4 mt-4">
-          <p className="mb-4"> 
-            <button
-            onClick={()=>handleRouter()}
-            className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            type="button"
-            >
-            Back
-            </button>
-          </p>
+        <div className="mt-4">
+             
         {/* Display status update message */}
       {updateSuccess !== null && (
         <div className={`mx-4 p-3 rounded ${updateSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
           {updateSuccess 
-            ? "Incident successfully marked as completed!" 
+            ? "Incident successfully marked as resolved!" 
             : "Failed to update incident status. Please try again."}
         </div>
       )}
@@ -711,6 +702,15 @@ const MainPage: React.FC = () => {
           )}
         </div>
       )}
+      <p className="mb-4"> 
+            <button
+            onClick={()=>handleRouter()}
+            className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            type="button"
+            >
+              Back
+            </button>
+      </p>
 </div>
 );
 }

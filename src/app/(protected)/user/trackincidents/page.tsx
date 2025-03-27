@@ -307,8 +307,9 @@ console.log(status);
                   <option defaultChecked value="">All</option>
                   <option value="Sent">Sent</option>
                   <option value="Assigned">Assigned</option>
+                  <option value="In Progress">In Progress</option>
                   <option value="Escalated">Escalated</option>
-                  <option value="Completed">Completed</option>
+                  <option value="Resolved">Resolved</option>
                 </select>
               </div>
             
@@ -378,11 +379,11 @@ console.log(status);
               sortedIncidents.map((incident, index) => (
                 <tr 
                   key={index} 
-                  className={`border-t border-gray-200 ${
-                    isITSupport && incident.incidentType === "received" 
-                      ? "bg-blue-50" 
-                      : ""
-                  }`}
+                  className={`border-t border-gray-200` //${
+                    // isITSupport && incident.incidentType === "received" 
+                      // ? "bg-blue-50" 
+                      // : ""
+                  }//`}
                 >
                   {/* Type column only for IT users */}
                   {isITSupport && (

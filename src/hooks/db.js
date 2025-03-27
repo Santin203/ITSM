@@ -257,7 +257,7 @@ export async function updateIncidentStatus(incidentId, newStatus, resolutionDeta
         
         // Add resolution details to the description if provided
         let description = `Status changed to: ${newStatus}`;
-        if (newStatus === "Completed") {
+        if (newStatus === "Resolved") {
           description += `. (Resolution date: ${currentTime.toLocaleString()}).`;
           
           // Include resolution details in the workflow
