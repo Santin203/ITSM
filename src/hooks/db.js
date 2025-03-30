@@ -371,3 +371,49 @@ export const updateWorkflowManager = async (incident_id, manager_id) => {
     console.warn("No workflow steps found for this incident.");
   }
 };
+
+export async function getITUserRequirementsData() 
+{
+  const currUser = auth.currentUser;
+  if (currUser) {
+    const uid = currUser.uid;
+    const docRef = doc(db, "Users", uid);
+    const docSnap = await getDoc(docRef);
+    const data = docSnap.data();
+    
+    if(data) {
+      const userId = data["id"];
+      const requirementsRef = collection(db, "Requirements");
+      
+      // Get requirements where user is the submitter (sent requirements)
+      const sentRequirementsQuery = query(requirementsRef, where("submitter_id", "==", Number(userId)));
+      const sentRequirementsSnapshot = await getDocs(sentRequirementsQuery);
+      const sentRequirementsData = sentRequirementsSnapshot.docs.map(doc => {
+        const requirementData = doc.data();
+        return [
+          { ...requirementData, requirementType: "sent" },
+          doc.id
+        ];
+      });
+      
+      // Get requirements where user is assigned (received requirements)
+      const receivedRequirementsQuery = query(requirementsRef, where("assigned_to_id", "==", Number(userId)));
+      const receivedRequirementsSnapshot = await getDocs(receivedRequirementsQuery);
+      const receivedRequirementsData = receivedRequirementsSnapshot.docs.map(doc => {
+        const requirementData = doc.data();
+        return [
+          { ...requirementData, requirementType: "received" },
+          doc.id
+        ];
+      });
+      
+      // Combine both sets of requirements
+      const allRequirementsData = [...sentRequirementsData, ...receivedRequirementsData];
+      
+      if(allRequirementsData.length > 0) {
+        return allRequirementsData;
+      }
+    } 
+  }
+  return [];
+}

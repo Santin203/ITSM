@@ -167,7 +167,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                     style={{ padding: "8px", cursor: "pointer" }}
                                     // onClick={() => setEnterIncidentModal(true)}
                                 >
-                                    <Link href="/user/enterrequirements" className="text-white font-medium no-underline">
+                                    <Link href="/enterrequirements" className="text-white font-medium no-underline">
                                         Enter Requirements
                                     </Link>
                                 </li>
@@ -175,7 +175,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                     style={{ padding: "10px", cursor: "pointer" }}
                                     // onClick={() => setTrackIncidentModal(true)}
                                 >
-                                    <Link href="/user/trackrequirements" className="text-white font-medium no-underline">
+                                    <Link href="/trackrequirements" className="text-white font-medium no-underline">
                                         Track Requirements
                                     </Link>
                                 </li>
