@@ -17,3 +17,10 @@ export async function deleteCookie(name: string) {
   const cookieStore = await cookies();
   cookieStore.delete(name);
 }
+
+export async function getCookie(name: string) {
+  if (name === "") return;
+  
+  const cookieStore = await cookies();
+  return cookieStore.get(name);
+}

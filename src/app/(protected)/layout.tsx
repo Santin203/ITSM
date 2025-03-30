@@ -9,11 +9,12 @@ import {
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { auth } from '../../firebaseConfig';
-import { getCurrUserData } from '../../hooks/db';
+import { getCurrUserData, sleep } from '../../hooks/db';
 import { useAuth } from '../../hooks/useAuth';
-import { createCookie } from "@/hooks/cookies";
+import { createCookie, getCookie } from "@/hooks/cookies";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
+
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -21,10 +22,11 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
     const [userSubmenu, setUserSubmenu] = useState(false);
-    const [isAdmin, setIsAdmin] = useState<boolean | null>(null); // State to track admin status
+    const [roles, setRoles] = useState([]); // State to track admin status
     const [incidentsSubmenu, setIncidentsSubmenu] = useState(false); // Toggle state for the submenu
     const [requirementsSubmenu, setRequirementsSubmenu] = useState(false); // Toggle state for the submenu
     const [userData, setUserData] = useState({name:"", img:""});
+    const [currRole, setCurrRole] = useState("");
     const {logout} = useAuth();
     const currUser = auth.currentUser; 
     //console.log("Current User:", currUser);
@@ -40,14 +42,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 const name = data["name"] + " " + data["last_name_1"] + " " + data["last_name_2"];
                 const img = data["picture_url"];
                 setUserData({name, img});
-                setIsAdmin(data["rol"] == "Admin");
-                createCookie("role", data["rol"]);
+                setRoles(data["rol"]);
+                const roleCookie = await getCookie("role");
+                setCurrRole(roleCookie?.value || "General User");
             }
         }
         fetch();
         }
     });
     
+    // const getCurrRole = async () => {
+    //     const roleCookie = await getCookie("role");
+    //     return cookie;
+    // }
+    // console.log(getCurrRole());
     //console.log(isAdmin);
     const handleLogout = async () => {
         //console.log("Current User:", currUser);
@@ -66,7 +74,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="flex min-h-screen font-sans bg-gray-100">
             {/* Side Bar */}
             <aside style={{
-                width: "210px",
+                width: "220px",
                 background: "linear-gradient(to bottom, #224089 0%, #203e91 100%)",
                 padding: "20px",
                 color: "#FFFFFF",
@@ -95,12 +103,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     <ul className="list-none p-0 m-0">
                         <li style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
                             <HomeIcon style={{ width: "20px", color: "#FFFFFF" }} />
-                            <Link href={isAdmin?"/admin":"/user"} style={{ color: "#FFFFFF", textDecoration: "none" }}>
+                            <Link href={currRole == "Admin"?"/admin":"/user"} style={{ color: "#FFFFFF", textDecoration: "none" }}>
                                 Dashboard
                             </Link>
                         </li>
                         {/* User Options for Admin */}
-                        {isAdmin && (<li
+                        {currRole == "Admin" && (<li
                             style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
                             onClick={() => setUserSubmenu(!userSubmenu)}
                             >
@@ -127,8 +135,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                 </li>
                             </ul>
                             )}
+
+
                         {/* Incidents */}
-                        {isAdmin != null && !isAdmin && (<li                     
+                        {currRole != "Admin" && (<li                     
                             style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
                             onClick={() => setIncidentsSubmenu(!incidentsSubmenu)}
                             >
@@ -155,21 +165,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                 </li>
                             </ul>
                             )}
+
+
                         {/* Requirements */}
-                        {isAdmin != null && !isAdmin && (<li                     
+                        <li                     
                             style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
                             onClick={() => setRequirementsSubmenu(!requirementsSubmenu)}
                             >
                             <ClipboardIcon style={{ width: "20px", color: "#FFFFFF" }} />
                             <span>Requirements ▼</span>
-                        </li>)}
+                        </li>
                         {requirementsSubmenu && (
                             <ul style={{ paddingLeft: "32px" }}>
                                 <li
                                     style={{ padding: "8px", cursor: "pointer" }}
                                     // onClick={() => setEnterIncidentModal(true)}
                                 >
-                                    <Link href="/user/enterrequirements" className="text-white font-medium no-underline">
+                                    <Link href="/enterrequirements" className="text-white font-medium no-underline">
                                         Enter Requirements
                                     </Link>
                                 </li>
@@ -177,12 +189,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                     style={{ padding: "10px", cursor: "pointer" }}
                                     // onClick={() => setTrackIncidentModal(true)}
                                 >
-                                    <Link href="/user/trackrequirements" className="text-white font-medium no-underline">
+                                    <Link href="/trackrequirements" className="text-white font-medium no-underline">
                                         Track Requirements
                                     </Link>
                                 </li>
                             </ul>
-                            )}      
+                            )}     
+
+
                         {/* Not Yet Needed to Implement */}
                         {/* <li className="mb-4">
                             <Link href="/reports" className="text-gray-800 font-medium no-underline">
@@ -211,6 +225,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             </Link>
                         </li> */}
                     </ul>
+
 
                     {/* YOUR TEAM */}
                     {/* <h3 style={{ fontSize: "14px", color: "#CBD5E1", marginTop: "20px", paddingLeft: "15px" }}>
@@ -268,12 +283,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         {userData.name}
                     </span>
                     
-                    {isAdmin && (
+                    {roles.length > 1 && (
                     <Menu as="div" className="relative inline-block text-left">
                         <div>
                             <MenuButton className="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 shadow-xs ring-gray-300 ring-inset hover:bg-gray-50">
-                            Change Role
-                            <ChevronDownIcon aria-hidden="true" className="-mr-1 size-5 text-gray-400" />
+                                {currRole}
+                                <ChevronDownIcon aria-hidden="true" className="-mr-1 size-5 text-gray-400" />
                             </MenuButton>
                         </div>
 
@@ -282,7 +297,22 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             className="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white ring-1 shadow-lg ring-black/5 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
                         >
                             <div className="py-1">
-                            <MenuItem>
+
+                            {roles.map((role, index) => (
+                                role != currRole && ( // Exclude the current role from the list
+                                <MenuItem key={index}>
+                                    <button
+                                    className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
+                                    onClick={async ()=>{createCookie("role", role);
+                                        await sleep(500);
+                                        window.location.reload();
+                                    }} // Set the role cookie when clicked
+                                    >
+                                    {role}
+                                    </button>
+                                </MenuItem>))
+                            )}
+                            {/* <MenuItem>
                                 <a
                                 href="#"
                                 className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
@@ -305,7 +335,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                 >
                                 General User
                                 </a>
-                            </MenuItem>
+                            </MenuItem> */}
                             </div>
                         </MenuItems>
                     </Menu>)}

@@ -1,8 +1,8 @@
 "use client";
 import React from 'react';
 import { useState, useEffect } from "react";
-import { getCurrUserRequirementsData} from '../../../../hooks/db.js'
-import { auth } from '../../../../firebaseConfig.js';
+import { getCurrUserRequirementsData} from '../../../hooks/db.js'
+import { auth } from '../../../firebaseConfig.js';
 
 type Requirement = {
   submitter_id:number,
@@ -135,11 +135,11 @@ console.log(status);
       <form>
           <fieldset>
           
-            <legend className="text-black dark:text-gray-200 font-semibold text-lg mb-4">Filter Requirements</legend>
+            <legend className="text-black font-semibold text-lg mb-4">Filter Requirements</legend>
               
               <div>
               <label htmlFor="incident_status" className="block mb-2">
-              <p className="text-black dark:text-gray-200 mt-2">Search for Requirement Process</p>
+              <p className="text-black mt-2">Search for Requirement Process</p>
               </label>
                 <select
                   className="text-black border rounded px-4 py-2 mb-4 w-medium"
@@ -154,7 +154,7 @@ console.log(status);
             
             <div className="flex space-x-4 mt-2">
                 <div>
-                  <label className="block text dark:text-gray-700 mt-2">Start Date:</label>
+                  <label className="block text-black mt-2">Start Date:</label>
                   <input
                     type="date"
                     className="text-black border rounded px-4 py-2 mb-4 w-medium"
@@ -163,7 +163,7 @@ console.log(status);
                   />
                 </div>
                 <div>
-                <label className="block text dark:text-gray-700 mt-2">End Date</label>
+                <label className="block text-black mt-2">End Date</label>
                 <input
                   type="date"
                   className="text-black border rounded px-4 py-2 mb-4 w-medium"
@@ -176,8 +176,8 @@ console.log(status);
         </form>
   
       </div>
-      <main className="overflow-x-auto bg-white shadow-md rounded-lg p-6 dark:bg-gray-800">
-      <table className="min-w-full text-gray-800 dark:text-gray-200">
+      <main className="overflow-x-auto bg-white shadow-md rounded-lg p-6 ">
+      <table className="min-w-full text-gray-800">
       <thead>
             <tr>
               <th className="px-4 py-2 text-left">Requirement ID</th>
@@ -200,7 +200,7 @@ console.log(status);
           </thead>
         <tbody>
             {sortedRequirements.map((u, index) => (
-              <tr key={index} className="border-t border-gray-200 dark:border-gray-700">
+              <tr key={index} className="border-t border-gray-200 ">
                 <td className="px-4 py-2">{u.requirement_id}</td>
                 <td className="px-4 py-2">{String(u.requirement_submit_date)}</td>
                 <td className="px-4 py-2">{u.process_type}</td>

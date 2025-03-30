@@ -2,8 +2,8 @@
 import React from 'react';
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getRequirementwithId, getRequirementFlowithId, getCurrUserData} from '../../../../../hooks/db.js'
-import { auth } from '../../../../../firebaseConfig.js';
+import { getRequirementwithId, getRequirementFlowithId, getCurrUserData} from '../../../../hooks/db.js'
+import { auth } from '../../../../firebaseConfig.js';
 import { userInfo } from 'os';
 
 type User = {

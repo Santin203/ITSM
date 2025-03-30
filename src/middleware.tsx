@@ -22,6 +22,11 @@ export function middleware(req: NextRequest) {
             return NextResponse.redirect(new URL('/user', req.url))
     }
 
+    if(req.nextUrl.pathname.startsWith('/user')) {
+        if(roleCookie == "Admin")
+            return NextResponse.redirect(new URL('/admin', req.url))
+    }
+
     if(req.nextUrl.pathname == '/' && loggedinCookie == "true" && mfaedCookie == "true") {
         if(roleCookie == "Admin")
             return NextResponse.redirect(new URL('/admin', req.url))
