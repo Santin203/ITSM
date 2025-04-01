@@ -1,23 +1,15 @@
 "use client";
 import React from 'react';
 import { useState, useEffect } from "react";
-import { getCurrUserIncidentsData, getITUserIncidentsData, getCurrUserData } from '../../../../hooks/db.js'
+import { getCurrUserIncidentsData, getITUserIncidentsData } from '../../../../hooks/db.js'
 import { auth } from '../../../../firebaseConfig.js';
-
+import { getCookie } from "../../../../hooks/cookies";
 type Incident = {
-  reporter_id: number,
   title: string,
   description: string,
   incident_id: number,
   incident_status: string,
   incident_report_date: string,
-  incident_start_date: string,
-  business_impact: string,
-  incident_logged: string,
-  it_id: number,
-  root_cause: string,
-  stakeholder_details: string,
-  docId: number,
   incidentType?: string  
 }[];
 
@@ -48,37 +40,16 @@ const MainPage: React.FC = () => {
     title: "",
     incident_report_date: ""
   });
-  
-  const [currUser, setCurrUser] = useState(auth.currentUser);
 
+   // Check user role when component mounts
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      setCurrUser(user);
-      if (user) {
-        const userData = await getCurrUserData();
-        if (userData && userData.rol === "IT") {
-          setIsITSupport(true);
-        }
-      }
-      setRoleChecked(true);
-    });
-  
-    return () => unsubscribe();
-  }, []);
-  
-
-  // Check if user is IT support
-  useEffect(() => {
-    const checkUserRole = async () => {
-      const userData = await getCurrUserData();
-      if (userData && userData.rol === "IT") {
-        setIsITSupport(true);
-      }
-      setRoleChecked(true); // NEW: mark role as loaded
-    };
-  
-    checkUserRole();
-  }, []);
+    const fetch = async (): Promise<void> => {    
+      const roleCookie = await getCookie("role");
+      setIsITSupport(roleCookie?.value === "IT");
+      setRoleChecked(true); // Set roleChecked to true after checking role
+    }
+    fetch();
+    }, []);
   
 
   const handleFetchAll = async (): Promise<void> => {
@@ -91,21 +62,11 @@ const MainPage: React.FC = () => {
           return {
             title: (u as any)[0]["title"],
             description: (u as any)[0]["description"],
-            reporter_id: (u as any)[0]["reporter_id"],
             incident_id: (u as any)[0]["incident_id"],
             incident_report_date: ((u as any)[0]["incident_report_date"].toDate().getFullYear()).toString() + '-'
               + ((u as any)[0]["incident_report_date"].toDate().getMonth() + 1).toString().padStart(2, "0") + '-'
               + ((u as any)[0]["incident_report_date"].toDate().getDate()).toString().padStart(2, "0"),
             incident_status: (u as any)[0]["incident_status"],
-            incident_start_date: ((u as any)[0]["incident_start_date"].toDate().getFullYear()).toString() + '-'
-              + ((u as any)[0]["incident_report_date"].toDate().getMonth() + 1).toString().padStart(2, "0") + '-'
-              + ((u as any)[0]["incident_report_date"].toDate().getDate()).toString().padStart(2, "0"),
-            business_impact: (u as any)[0]["business_impact"],
-            incident_logged: (u as any)[0]["incident_logged"],
-            it_id: (u as any)[0]["it_id"],
-            root_cause: (u as any)[0]["root_cause"],
-            stakeholder_details: (u as any)[0]["stakeholder_details"],
-            docId: (u as any)[1],
             incidentType: (u as any)[0]["incidentType"]
           };
         });
@@ -122,21 +83,11 @@ const MainPage: React.FC = () => {
           return {
             title: (u as any)[0]["title"],
             description: (u as any)[0]["description"],
-            reporter_id: (u as any)[0]["reporter_id"],
             incident_id: (u as any)[0]["incident_id"],
             incident_report_date: ((u as any)[0]["incident_report_date"].toDate().getFullYear()).toString() + '-'
               + ((u as any)[0]["incident_report_date"].toDate().getMonth() + 1).toString().padStart(2, "0") + '-'
               + ((u as any)[0]["incident_report_date"].toDate().getDate()).toString().padStart(2, "0"),
             incident_status: (u as any)[0]["incident_status"],
-            incident_start_date: ((u as any)[0]["incident_start_date"].toDate().getFullYear()).toString() + '-'
-              + ((u as any)[0]["incident_report_date"].toDate().getMonth() + 1).toString().padStart(2, "0") + '-'
-              + ((u as any)[0]["incident_report_date"].toDate().getDate()).toString().padStart(2, "0"),
-            business_impact: (u as any)[0]["business_impact"],
-            incident_logged: (u as any)[0]["incident_logged"],
-            it_id: (u as any)[0]["it_id"],
-            root_cause: (u as any)[0]["root_cause"],
-            stakeholder_details: (u as any)[0]["stakeholder_details"],
-            docId: (u as any)[1]
           };
         });
         setIncidents(tasks);

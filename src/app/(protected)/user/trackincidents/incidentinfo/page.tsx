@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {getFlowithId, getIncidentwithId, getCurrUserData, updateIncidentStatus} from '../../../../../hooks/db.js'
 import { auth } from '../../../../../firebaseConfig.js';
 import { updateWorkflowManager } from '../../../../../hooks/db.js';
+import { getCookie } from "../../../../../hooks/cookies";
 
 
 type Incident = {
@@ -63,13 +64,15 @@ const MainPage: React.FC = () => {
     return () => unsubscribe();
   }, []);
  
+
   // Check if user is IT support and if the incident is assigned to them
   useEffect(() => {
     const checkUserRole = async () => {
       try {
         if (currUser) {
           const userData = await getCurrUserData();
-          if (userData && userData.rol === "IT") {
+          const roleCookie = await getCookie("role");
+          if (userData && roleCookie?.value === "IT") {
             setIsITSupport(true);
             
             // Check if the current incident is assigned to this IT user
@@ -114,7 +117,7 @@ const MainPage: React.FC = () => {
             + ((u as any)["incident_report_date"].toDate().getDate()).toString().padStart(2, "0"),
             business_impact:(u as any)["business_impact"],
             incident_logged:(u as any)["incident_logged"],
-            it_id:(u as any)["it_id"],
+            it_id:(u as any)["assigned_to_id"],
             root_cause:(u as any)["root_cause"],
             stakeholder_details:(u as any)["stakeholder_details"],
             organization:(u as any)["organization"],

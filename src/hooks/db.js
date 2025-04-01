@@ -59,7 +59,7 @@ export async function setUserRole(newRole, userDocID) {
   try{
     const batch = writeBatch(db);
     const docRef = doc(db, "Users", String(userDocID));
-    batch.update(docRef, {"rol": String(newRole)});
+    batch.update(docRef, {"rol": newRole});
     await batch.commit();
     return(0);
   }
@@ -175,7 +175,7 @@ export async function getITUserIncidentsData()
       });
       
       // Get incidents where user is the IT support (received incidents)
-      const receivedIncidentsQuery = query(incidentsRef, where("it_id", "==", Number(userId)));
+      const receivedIncidentsQuery = query(incidentsRef, where("assigned_to_id", "==", Number(userId)));
       const receivedIncidentsSnapshot = await getDocs(receivedIncidentsQuery);
       const receivedIncidentsData = receivedIncidentsSnapshot.docs.map(doc => {
         return [

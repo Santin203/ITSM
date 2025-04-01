@@ -1,8 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { auth } from '../../../firebaseConfig.js';
-import { getCurrUserData, getCurrUserRequirementsData, getITUserRequirementsData } from '../../../hooks/db.js';
-
+import { getCookie } from '../../../hooks/cookies';
+import { getCurrUserRequirementsData, getITUserRequirementsData } from '../../../hooks/db.js';
 type Requirement = {
   submitter_id:number,
   process_type:string,
@@ -33,32 +32,16 @@ const MainPage: React.FC = () => {
   const [requirementTypeFilter, setRequirementTypeFilter] = useState("all"); // "all", "sent", "received"
   const [roleChecked, setRoleChecked] = useState(false); // Wait for role to be determined
 
-  const [formData, setFormData] = useState({
-    title: "",
-    incident_report_date:""
-  });
-  const [currUser, setCurrUser] = useState(auth.currentUser); // Start with initial auth state
-
   // Check user role when component mounts
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      console.log("Auth state changed:", user);
-      setCurrUser(user); // Update state when user logs in/out
-      if (user) {
-        const userData = await getCurrUserData();
-        if (userData) {
-          if (userData.rol === "IT") {
-            setIsITSupport(true);
-          } else if (userData.rol === "Admin") {
-            setIsAdmin(true);
-          }
-        }
-      }
-      setRoleChecked(true);
-    });
-
-    return () => unsubscribe(); // Cleanup the listener
-  }, []);
+    const fetch = async (): Promise<void> => {    
+      const roleCookie = await getCookie("role");
+      setIsAdmin(roleCookie?.value === "Admin");
+      setIsITSupport(roleCookie?.value === "IT");
+      setRoleChecked(true); // Set roleChecked to true after checking role
+    }
+    fetch();
+    }, []);
 
   
   const handleFetchAll = async (): Promise<void> => { 
@@ -179,11 +162,6 @@ const MainPage: React.FC = () => {
         newOrder[col] = 1
       return newOrder;
     });
-  };
-        
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   // Get the appropriate page title based on filter selection
