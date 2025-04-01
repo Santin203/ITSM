@@ -1,9 +1,7 @@
 "use client";
-import React from 'react';
-import { useState, useEffect } from "react";
-import { getCurrUserRequirementsData, getITUserRequirementsData, getCurrUserData } from '../../../hooks/db.js'
-import { auth } from '../../../firebaseConfig.js';
-
+import React, { useEffect, useState } from 'react';
+import { getCookie } from '../../../hooks/cookies';
+import { getCurrUserRequirementsData, getITUserRequirementsData } from '../../../hooks/db.js';
 type Requirement = {
   submitter_id:number,
   process_type:string,
@@ -34,32 +32,16 @@ const MainPage: React.FC = () => {
   const [requirementTypeFilter, setRequirementTypeFilter] = useState("all"); // "all", "sent", "received"
   const [roleChecked, setRoleChecked] = useState(false); // Wait for role to be determined
 
-  const [formData, setFormData] = useState({
-    title: "",
-    incident_report_date:""
-  });
-  const [currUser, setCurrUser] = useState(auth.currentUser); // Start with initial auth state
-
   // Check user role when component mounts
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      console.log("Auth state changed:", user);
-      setCurrUser(user); // Update state when user logs in/out
-      if (user) {
-        const userData = await getCurrUserData();
-        if (userData) {
-          if (userData.rol === "IT") {
-            setIsITSupport(true);
-          } else if (userData.rol === "Admin") {
-            setIsAdmin(true);
-          }
-        }
-      }
-      setRoleChecked(true);
-    });
-
-    return () => unsubscribe(); // Cleanup the listener
-  }, []);
+    const fetch = async (): Promise<void> => {    
+      const roleCookie = await getCookie("role");
+      setIsAdmin(roleCookie?.value === "Admin");
+      setIsITSupport(roleCookie?.value === "IT");
+      setRoleChecked(true); // Set roleChecked to true after checking role
+    }
+    fetch();
+    }, []);
 
   
   const handleFetchAll = async (): Promise<void> => { 
@@ -181,11 +163,6 @@ const MainPage: React.FC = () => {
       return newOrder;
     });
   };
-        
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
 
   // Get the appropriate page title based on filter selection
   const getPageTitle = () => {
@@ -293,8 +270,8 @@ const MainPage: React.FC = () => {
         </form>
   
       </div>
-      <main className="overflow-x-auto bg-white shadow-md rounded-lg p-6 dark:bg-gray-800">
-      <table className="min-w-full text-gray-800 dark:text-gray-200">
+      <main className="overflow-x-auto bg-white shadow-md rounded-lg p-6">
+      <table className="min-w-full text-gray-800">
       <thead>
             <tr>
               {/* Type column only for Admin/IT users */}
@@ -323,7 +300,7 @@ const MainPage: React.FC = () => {
         <tbody>
             {sortedRequirements.length > 0 ? (
               sortedRequirements.map((u, index) => (
-                <tr key={index} className="border-t border-gray-200 dark:border-gray-700">
+                <tr key={index} className="border-t border-gray-200">
                   {/* Type column only for Admin/IT users */}
                   {(isAdmin || isITSupport) && (
                     <td className="px-4 py-2">

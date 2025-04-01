@@ -33,7 +33,7 @@ export default function Login() {
       const data = await getCurrUserData();
       if(data)
       {
-          setIsAdmin(data["rol"] == "admin");
+          setIsAdmin(data["rol"].includes("Admin"));
       }
     }
     fetch();
