@@ -417,3 +417,81 @@ export async function getITUserRequirementsData()
   }
   return [];
 }
+
+export async function updateRequirementStatus(requirementId, newStatus, resolutionDetails = '') {
+  try {
+    const batch = writeBatch(db);
+    const requirementsRef = collection(db, "Requirements");
+    const requirementQuery = query(requirementsRef, where("requirement_id", "==", Number(requirementId)));
+    const requirementSnapshot = await getDocs(requirementQuery);
+
+    if (requirementSnapshot.empty) {
+      console.error("No requirement found with ID:", requirementId);
+      return 1;
+    }
+
+    const requirementDoc = requirementSnapshot.docs[0];
+    const requirementDocId = requirementDoc.id;
+    const requirementData = requirementDoc.data();
+    const currentTime = new Date();
+
+    const docRef = doc(db, "Requirements", requirementDocId);
+    if (newStatus === "Resolved") {
+      batch.update(docRef, {
+        process_type: newStatus,
+        resolution_date: currentTime,
+        resolution_details: resolutionDetails || ''
+      });
+    } else {
+      batch.update(docRef, { process_type: newStatus });
+    }
+
+    const workflowRef = collection(db, "Requirement_Workflow");
+    const currUser = auth.currentUser;
+
+    if (currUser) {
+      const userDocRef = doc(db, "Users", currUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      const userData = userDocSnap.data();
+
+      if (userData) {
+        const workflowQuery = query(workflowRef, where("requirement_id", "==", Number(requirementId)));
+        const workflowSnapshot = await getDocs(workflowQuery);
+        let maxOrder = 0;
+
+        workflowSnapshot.forEach((doc) => {
+          const order = doc.data().order || 0;
+          if (order > maxOrder) {
+            maxOrder = order;
+          }
+        });
+
+        const newWorkflowRef = doc(workflowRef);
+        let description = `Status changed to: ${newStatus}`;
+        if (newStatus === "Resolved") {
+          description += `. (Resolution date: ${currentTime.toLocaleString()}).`;
+          if (resolutionDetails && resolutionDetails.trim() !== '') {
+            description += `\nResolution details: ${resolutionDetails}`;
+          }
+        }
+
+        batch.set(newWorkflowRef, {
+          brief_description: description,
+          requirement_id: Number(requirementId),
+          process_type: newStatus,
+          order: maxOrder + 1,
+          submitter_id: Number(userData.id),
+          time_of_update: currentTime,
+          manager_id: Number(requirementData.assigned_to_id)
+        });
+      }
+    }
+
+    await batch.commit();
+    return 0;
+  } catch (error) {
+    console.error("Error updating requirement status:", error);
+    return 1;
+  }
+}
+
