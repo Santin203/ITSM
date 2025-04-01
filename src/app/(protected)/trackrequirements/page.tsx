@@ -1,8 +1,7 @@
 "use client";
-import React from 'react';
-import { useState, useEffect } from "react";
-import { getCurrUserRequirementsData, getITUserRequirementsData, getCurrUserData } from '../../../hooks/db.js'
+import React, { useEffect, useState } from 'react';
 import { auth } from '../../../firebaseConfig.js';
+import { getCurrUserData, getCurrUserRequirementsData, getITUserRequirementsData } from '../../../hooks/db.js';
 
 type Requirement = {
   submitter_id:number,
@@ -293,8 +292,8 @@ const MainPage: React.FC = () => {
         </form>
   
       </div>
-      <main className="overflow-x-auto bg-white shadow-md rounded-lg p-6 dark:bg-gray-800">
-      <table className="min-w-full text-gray-800 dark:text-gray-200">
+      <main className="overflow-x-auto bg-white shadow-md rounded-lg p-6">
+      <table className="min-w-full text-gray-800">
       <thead>
             <tr>
               {/* Type column only for Admin/IT users */}
@@ -323,7 +322,7 @@ const MainPage: React.FC = () => {
         <tbody>
             {sortedRequirements.length > 0 ? (
               sortedRequirements.map((u, index) => (
-                <tr key={index} className="border-t border-gray-200 dark:border-gray-700">
+                <tr key={index} className="border-t border-gray-200">
                   {/* Type column only for Admin/IT users */}
                   {(isAdmin || isITSupport) && (
                     <td className="px-4 py-2">

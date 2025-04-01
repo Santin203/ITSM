@@ -37,7 +37,7 @@ export default function Login() {
 
     const currentUserData = await getCurrentUserData(username); // must await because function is async
     const email = currentUserData ? currentUserData.email : null;
-    const role = currentUserData ? currentUserData.rol : null;
+    const roles = currentUserData ? currentUserData.rol : null;
 
     if (email === null) {
       setValid(false); // false on failure
@@ -48,10 +48,21 @@ export default function Login() {
         
         const userCredential = await login(email, password);
         console.log("Successful login")
-          
-        await createCookie("role", role); // create cookie for user role
+        
         await createCookie("loggedin", "true"); // create cookie for logged in user
-       
+        if(roles.length > 1)
+        {
+          if(roles.includes("Admin")) {
+            await createCookie("role", "Admin"); // create cookie for admin user
+          }
+          else if(roles.includes("IT")) {
+            await createCookie("role", "IT"); // create cookie for IT user
+          }
+          else
+          {
+            await createCookie("role", "General User"); // create cookie for general user
+          }
+        }
 
         if (userCredential) {
           router.push("/mfa");

@@ -43,19 +43,22 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 const img = data["picture_url"];
                 setUserData({name, img});
                 setRoles(data["rol"]);
-                const roleCookie = await getCookie("role");
-                setCurrRole(roleCookie?.value || "General User");
+                if(data["rol"].length > 1)
+                {
+                    const roleCookie = await getCookie("role");
+                    setCurrRole(roleCookie?.value || data["rol"][0]);
+                }
+                else
+                {
+                    setCurrRole(data["rol"][0]);
+                    createCookie("role", data["rol"][0]);
+                }
             }
         }
         fetch();
         }
     });
     
-    // const getCurrRole = async () => {
-    //     const roleCookie = await getCookie("role");
-    //     return cookie;
-    // }
-    // console.log(getCurrRole());
     //console.log(isAdmin);
     const handleLogout = async () => {
         //console.log("Current User:", currUser);
