@@ -287,7 +287,7 @@ export async function updateIncidentStatus(incidentId, newStatus, resolutionDeta
   }
 }
 
-// Function to update incident state (added from new version)
+// Function to update incident state 
 export async function updateIncidentState(incidentId, newState, updatedBy) {
   try {
     const batch = writeBatch(db);
@@ -349,8 +349,8 @@ export async function getAllGroups() {
   }
 }
 
-// Function to escalate incident to user or group (added from new version)
-export async function escalateIncident(incidentId, targetId, comment, updatedBy, isGroup = false) {
+// Function to escalate incident to a user
+export async function escalateIncident(incidentId, targetId, comment, updatedBy) {
   try {
     const batch = writeBatch(db);
     
@@ -368,39 +368,9 @@ export async function escalateIncident(incidentId, targetId, comment, updatedBy,
     const incidentDoc = querySnapshot.docs[0];
     const incidentRef = doc(db, "Incidents", incidentDoc.id);
     
-    let assignedIds = [];
-    let targetName = "";
-    
-    if (isGroup) {
-      // If escalating to a group, get all members
-      const groupRef = doc(db, "Groups", targetId);
-      const groupDoc = await getDoc(groupRef);
-      
-      if (groupDoc.exists()) {
-        const groupData = groupDoc.data();
-        assignedIds = groupData.members || [];
-        targetName = `Group: ${groupData.name}`;
-      } else {
-        console.error("Group not found:", targetId);
-        return false;
-      }
-    } else {
-      // If escalating to individual, just use their ID
-      assignedIds = [String(targetId)];
-      targetName = `User: ${targetId}`;
-    }
-    
-    // Create a new assigned_to field if it doesn't exist or update it
-    // First check if the document already has the field
-    const incidentData = incidentDoc.data();
-    const currentAssigned = incidentData.assigned_to || [];
-    
-    // Combine existing assignees with new ones, avoiding duplicates
-    const updatedAssignedTo = [...new Set([...currentAssigned, ...assignedIds])];
-    
-    // Update the incident document
+    // Update the incident document - now using assigned_to_id (a number)
     batch.update(incidentRef, {
-      assigned_to: updatedAssignedTo,
+      assigned_to_id: Number(targetId), // Update assigned_to_id as a number
       incident_status: "Escalated",
       last_updated_by: String(updatedBy),
       last_updated_at: new Date(),
@@ -411,7 +381,7 @@ export async function escalateIncident(incidentId, targetId, comment, updatedBy,
     const workflowRef = doc(collection(db, "Workflow"));
     batch.set(workflowRef, {
       incident_id: Number(incidentId),
-      description: `Escalated to ${targetName}: ${comment}`,
+      description: `Escalated to User: ${targetId}: ${comment}`,
       reporter_id: Number(updatedBy),
       time_of_incident: new Date(),
       incident_status: "Escalated",
@@ -428,7 +398,7 @@ export async function escalateIncident(incidentId, targetId, comment, updatedBy,
   }
 }
 
-// Function to get incidents assigned to current user (added from new version)
+// Function to get incidents assigned to current user
 export async function getAssignedIncidents() {
   const currUser = auth.currentUser;
   if (currUser) {

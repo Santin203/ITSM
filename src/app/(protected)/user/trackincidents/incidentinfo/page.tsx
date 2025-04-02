@@ -125,43 +125,52 @@ const MainPage: React.FC = () => {
     }
   }, [currUser, incidents, isRoleChecked]);
 
-  // Fetch escalation targets (grupos y usuarios)
-  useEffect(() => {
-    const fetchEscalationTargets = async () => {
-      // Only fetch if user is IT support
-      if (!isITSupport) return; //US6-9 son solo para IT Support
-      
-      try {
-        // Fetch groups
-        const groups = await getAllGroups();
-        console.log("Fetched groups:", groups);
-        
-        // Fetch users who can be escalated to (IT users)
-        const allUsers = await getUsersDataDic();
-        const itUsers = allUsers
-          .filter((userTuple: any) => userTuple[0].rol === "IT")
-          .map((userTuple: any) => ({
-            id: userTuple[0].id,
-            name: userTuple[0].name || `IT User ${userTuple[0].id}`,
-            department: "IT",
-            role: "IT Support",
-            isGroup: false
-          }));
-        
-        // Combine groups with individual escalation users
-        const allTargets = [
-          ...groups,
-          ...itUsers
-        ];
-        
-        setEscalationTargets(allTargets);
-      } catch (error) {
-        console.error("Error fetching escalation targets:", error);
-      }
-    };
+  // Fetch escalation targets (grupos y usuarios) deshabilitada hasta prox sprint
+  // Fetch escalation targets (users only)
+// Fetch escalation targets (users only)
+// Fetch escalation targets (users only)
+useEffect(() => {
+  const fetchEscalationTargets = async () => {
+    if (!isITSupport) return;
     
-    fetchEscalationTargets();
-  }, [isITSupport]);
+    try {
+      // Get current user's data to identify and exclude them
+      const currentUserData = await getCurrUserData();
+      const currentUserId = currentUserData?.id;
+      
+      // Fetch all users from Firebase
+      const allUsers = await getUsersDataDic();
+      const usersList = allUsers
+        .map((userTuple: any) => {
+          const userData = userTuple[0];
+          // Create a full name using available name fields
+          const firstName = userData.name || '';
+          const lastName1 = userData.last_name_1 || '';
+          
+          // Format name as "First Last" 
+          let displayName = firstName;
+          if (lastName1) displayName += ' ' + lastName1;
+          
+          // If no name is available, use ID as fallback
+          if (!displayName.trim()) displayName = `User ${userData.id}`;
+          
+          return {
+            id: userData.id,
+            displayName: displayName,
+            email: userData.email || ''
+          };
+        })
+        // Filter out the current user
+        .filter(user => user.id !== currentUserId);
+      
+      setEscalationTargets(usersList);
+    } catch (error) {
+      console.error("Error fetching escalation targets:", error);
+    }
+  };
+  
+  fetchEscalationTargets();
+}, [isITSupport]);
   
   const handleFetchAll = async (): Promise<void> => { 
     try {
@@ -336,25 +345,13 @@ const MainPage: React.FC = () => {
   };
   
   // Handle escalation selection change
+  
+  // Handle escalation selection change
   const handleEscalationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const targetValue = e.target.value;
-    console.log("Selected escalation target:", targetValue);
-    
-    // Check if the value is for a group
-    const isGroup = targetValue.startsWith('group_');
-    setIsGroupSelected(isGroup);
-    
-    // Extract the actual ID
-    let actualId;
-    if (isGroup) {
-      actualId = targetValue.substring(6); // Remove 'group_' prefix
-    } else {
-      actualId = parseInt(targetValue);
-    }
-    
-    setSelectedEscalationUser(actualId);
-    console.log("Set selected user/group to:", actualId, "isGroup:", isGroup);
-  };
+  const targetValue = e.target.value;
+  const userId = parseInt(targetValue);
+  setSelectedEscalationUser(userId);
+};
   
   // Handle escalation comment change
   const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -504,7 +501,6 @@ const MainPage: React.FC = () => {
         selectedEscalationUser,
         escalationComment,
         currentUserId,
-        isGroupSelected
       );
       
       if (success) {
@@ -528,6 +524,7 @@ const MainPage: React.FC = () => {
         setTimeout(() => {
           setEscalationSuccess(false);
         }, 3000);
+        window.location.href = "/user/trackincidents";
       } else {
         throw new Error("Failed to escalate incident");
       }
@@ -613,37 +610,24 @@ const MainPage: React.FC = () => {
               <div>
                 <div className="mb-4">
                   <label htmlFor="escalationSelect" className="block mb-2 font-medium">
-                    Select person or group to escalate to:
+                    Select user to escalate to:
                   </label>
                   <select
                     id="escalationSelect"
                     className="w-full md:w-1/2 lg:w-1/3 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     onChange={handleEscalationChange}
-                    value={isGroupSelected ? `group_${selectedEscalationUser}` : selectedEscalationUser || ""}
+                    value={selectedEscalationUser || ""}
                     disabled={isEscalating}
                   >
-                    <option value="">-- Select escalation target --</option>
-                    <optgroup label="Groups">
-                      {escalationTargets
-                        .filter(target => target.isGroup)
-                        .map(group => (
-                          <option key={`group_${group.id}`} value={`group_${group.id}`}>
-                            {group.name} (Group)
-                          </option>
-                        ))}
-                    </optgroup>
-                    <optgroup label="Individual Users">
-                      {escalationTargets
-                        .filter(target => !target.isGroup)
-                        .map(user => (
-                          <option key={`user_${user.id}`} value={user.id}>
-                            {user.name}
-                          </option>
-                        ))}
-                    </optgroup>
+                    <option value="">-- Select user --</option>
+                    {escalationTargets.map(user => (
+                      <option key={`user_${user.id}`} value={user.id}>
+                        {user.displayName}
+                      </option>
+                    ))}
                   </select>
                 </div>
-                
+
                 <div className="mb-4">
                   <label htmlFor="escalationComment" className="block mb-2 font-medium">
                     Escalation details:
