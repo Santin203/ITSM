@@ -7,7 +7,7 @@ import {auth} from '../../../../firebaseConfig';
 type User = {
   name:string,
   lastname:string,
-  rol:string,
+  rol:string[],
   id:number,
   docId:string
 }[];       //define the task type
@@ -26,7 +26,7 @@ const MainPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: "",
     last:"",
-    rol:"",
+    rol:[],
     id:"",
   });
   
@@ -99,15 +99,35 @@ const MainPage: React.FC = () => {
         const confirmation = successBox();
         if(confirmation === true)
         {
-          const response = await setUserRole(newRole, userID);
+          const newRoleList = [];
+          if(newRole === "Admin")
+          {
+            newRoleList.push("Admin", "IT", "General User");
+          }
+          else if(newRole === "IT")
+          {
+            newRoleList.push("IT", "General User");
+          }
+          else if (newRole === "General User")
+          {
+            newRoleList.push("General User");
+          }
+          else if (newRole === "No access")
+          {
+            newRoleList.push("No access");
+          }
+
+
+          const response = await setUserRole(newRoleList, userID);
           if(response === 0)
+          {
             alert("Information Updated!");
             if(userID == auth.currentUser?.uid)
             {
               window.location.href = "/user";
               return
             }
-              
+          } 
           else
             alert("An error occurred.");
         }
@@ -226,9 +246,9 @@ const MainPage: React.FC = () => {
                 <td className="px-4 py-2">{u.id}</td>
                 <td className="px-4 py-2">
                 <select name="roles" id="roles"
-                  onChange={(e) => handleChangeRole(e.target.value, u.docId, u.rol)}>
+                  onChange={(e) => handleChangeRole(e.target.value, u.docId, u.rol[0])}>
                   <optgroup label="Current Role">
-                    <option defaultChecked>{u.rol}</option>
+                    <option defaultChecked>{u.rol[0]}</option>
                     </optgroup>
                     <optgroup label="Select new role">
                     <option value="Admin">Admin</option>

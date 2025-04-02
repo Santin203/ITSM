@@ -38,7 +38,7 @@ const MainPage: React.FC = () => {
         return {  //return data compatible with data types specified in the tasks variable 
             name: (u as any)[0]["name"],
             lastname: (u as any)[0]["last_name_1"],
-            rol: (u as any)[0]["rol"],
+            rol: (u as any)[0]["rol"][0],
             id: (u as any)[0]["id"],
             docId: (u as any)[1]
             }
