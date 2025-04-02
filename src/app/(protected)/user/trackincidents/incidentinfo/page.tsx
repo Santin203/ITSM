@@ -2,8 +2,11 @@
 import React from 'react';
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {getFlowithId, getIncidentwithId} from '../../../../../hooks/db.js'
+import {getFlowithId, getIncidentwithId, getCurrUserData, updateIncidentStatus} from '../../../../../hooks/db.js'
 import { auth } from '../../../../../firebaseConfig.js';
+import { updateWorkflowManager } from '../../../../../hooks/db.js';
+import { getCookie } from "../../../../../hooks/cookies";
+
 
 type Incident = {
   reporter_id:number,
@@ -37,32 +40,69 @@ type Workflow = {
 
 
 const MainPage: React.FC = () => {
-
   const [uid, setUid] = useState("");
   const [incidents, setIncidents] = useState<Incident>([]);
   const [flows, setFlows] = useState<Workflow>([]);
   const [flagflow, setFlagFlow] = useState("");
+  const [isITSupport, setIsITSupport] = useState(false);
+  const [isAssignedToMe, setIsAssignedToMe] = useState(false);
+  const [isRoleChecked, setIsRoleChecked] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateSuccess, setUpdateSuccess] = useState<boolean | null>(null);
+  const [resolutionDetails, setResolutionDetails] = useState("");
+  const [showResolutionForm, setShowResolutionForm] = useState(false);
   const router = useRouter();
-  const [currUser, setCurrUser] = useState(auth.currentUser); // Start with initial auth state
+  const [currUser, setCurrUser] = useState(auth.currentUser); 
   
-    useEffect(() => {
-      const unsubscribe = auth.onAuthStateChanged((user) => {
-        console.log("Auth state changed:", user);
-        setCurrUser(user); // Update state when user logs in/out
-      });
-  
-      return () => unsubscribe(); // Cleanup the listener
-    }, []);
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      console.log("Auth state changed:", user);
+      setCurrUser(user);
+    });
+
+    return () => unsubscribe();
+  }, []);
  
+
+  // Check if user is IT support and if the incident is assigned to them
+  useEffect(() => {
+    const checkUserRole = async () => {
+      try {
+        if (currUser) {
+          const userData = await getCurrUserData();
+          const roleCookie = await getCookie("role");
+          if (userData && roleCookie?.value === "IT") {
+            setIsITSupport(true);
+            
+            // Check if the current incident is assigned to this IT user
+            if (incidents.length > 0) {
+              const incident = incidents[0];
+              if (incident.it_id === userData.id) {
+                setIsAssignedToMe(true);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error checking user role:", error);
+      } finally {
+        setIsRoleChecked(true);
+      }
+    };
+    
+    if (!isRoleChecked && incidents.length > 0) {
+      checkUserRole();
+    }
+  }, [currUser, incidents, isRoleChecked]);
   
   const handleFetchAll = async (): Promise<void> => { 
+    try {
       const incidentsData = await getIncidentwithId(Number(localStorage.getItem("incident_id")));
-      if(incidentsData)
-      {
+      if(incidentsData) {
         setUid("a");
         const tasks = incidentsData.map((u) => {
-          return {  //return data compatible with data types specified in the tasks variable 
-            title: (u as any)["title"] ,
+          return {
+            title: (u as any)["title"],
             description: (u as any)["description"],
             reporter_id: (u as any)["reporter_id"],
             incident_id: (u as any)["incident_id"],
@@ -76,7 +116,7 @@ const MainPage: React.FC = () => {
             + ((u as any)["incident_report_date"].toDate().getDate()).toString().padStart(2, "0"),
             business_impact:(u as any)["business_impact"],
             incident_logged:(u as any)["incident_logged"],
-            it_id:(u as any)["it_id"],
+            it_id:(u as any)["assigned_to_id"],
             root_cause:(u as any)["root_cause"],
             organization:(u as any)["organization"],
             department:(u as any)["department"],
@@ -89,19 +129,22 @@ const MainPage: React.FC = () => {
             }
            }); 
            
-           setIncidents(tasks);
-        }
-        else
-          console.log("nothing retrieved :(");
+        setIncidents(tasks);
+      } else {
+        console.log("nothing retrieved :(");
+      }
+    } catch (error) {
+      console.error("Error fetching incident:", error);
     }
+  }
 
-    const handleFetchFlow = async (): Promise<void> => { 
+  const handleFetchFlow = async (): Promise<void> => { 
+    try {
       const flows = await getFlowithId(Number(localStorage.getItem("incident_id")));
-      if(flows)
-      {
+      if(flows) {
         setFlagFlow("a");
         const tasks = flows.map((u) => {
-          return {  //return data compatible with data types specified in the tasks variable 
+          return {
             description: (u as any)["description"],
             reporter_id: (u as any)["reporter_id"],
             incident_id: (u as any)["incident_id"],
@@ -111,36 +154,113 @@ const MainPage: React.FC = () => {
             incident_status: (u as any)["incident_status"],
             order: (u as any)["order"],
             manager_id: (u as any)["manager_id"]
-            }
-           }); 
-           setFlows(tasks);
-        }
-        else
-          console.log("nothing retrieved :(");
-    }
-
-    useEffect(() => 
-    {
-      const fetch = async(): Promise<void>=>{
-        await handleFetchAll();  
+          };
+        }); 
+        setFlows(tasks);
+      } else {
+        console.log("nothing retrieved :(");
       }
-      if(uid === "")
-        fetch();
-    });
+    } catch (error) {
+      console.error("Error fetching workflow:", error);
+    }
+  }
 
-    useEffect(() => 
-      {
-        const fetch = async(): Promise<void>=>{
-          await handleFetchFlow();  
-        }
-        if(flagflow === "")
-          fetch();
-      });
+  useEffect(() => {
+    const fetch = async(): Promise<void> => {
+      await handleFetchAll();  
+    }
+    if(uid === "") {
+      fetch();
+    }
+  }, [uid]);
+
+  useEffect(() => {
+    const fetch = async(): Promise<void> => {
+      await handleFetchFlow();  
+    }
+    if(flagflow === "") {
+      fetch();
+    }
+  }, [flagflow]);
 
   const handleRouter = () => {
     localStorage.clear();
     router.back();
   }
+
+  // Show resolution form
+  const handleShowResolutionForm = () => {
+    setShowResolutionForm(true);
+  };
+
+  // Handle resolving the incident
+  const handleResolveIncident = async () => {
+    if (!currUser || !isITSupport || !isAssignedToMe) {
+      return;
+    }
+  
+    const incidentId = localStorage.getItem("incident_id");
+    if (!incidentId) {
+      return;
+    }
+  
+    // Check if resolution details were provided
+    if (!resolutionDetails.trim()) {
+      alert("Please provide resolution details before resolving the incident.");
+      return;
+    }
+  
+    const confirmResolve = window.confirm("Are you sure you want to mark this incident as resolved?");
+    if (!confirmResolve) {
+      return;
+    }
+  
+    setIsUpdating(true);
+  
+    try {
+      // Update the incident's status to "Resolved"
+      const result = await updateIncidentStatus(incidentId, "Resolved", resolutionDetails);
+  
+      if (result === 0) {
+        setUpdateSuccess(true);
+        setShowResolutionForm(false);
+        setResolutionDetails("");
+  
+        // Also update the workflow manager_id
+        const itId = incidents[0]?.it_id;
+        if (itId) {
+          await updateWorkflowManager(incidentId, itId);
+        }
+  
+        // Refresh data
+        await handleFetchAll();
+        await handleFetchFlow();
+      } else {
+        setUpdateSuccess(false);
+      }
+    } catch (error) {
+      console.error("Error resolving incident:", error);
+      setUpdateSuccess(false);
+    } finally {
+      setIsUpdating(false);
+  
+      // Clear the status message after 3 seconds
+      setTimeout(() => {
+        setUpdateSuccess(null);
+      }, 3000);
+    }
+  };
+  
+
+  // Check if incident can be resolved (not already resolved)
+  const canResolveIncident = () => {
+    if (!incidents.length) return false;
+    
+    const incident = incidents[0];
+    return isITSupport && 
+           isAssignedToMe && 
+           incident.incident_status !== "Resolved";
+  };
 
         return(
       <div style={{ display: "flex", flexDirection: "column"}} className="text-black">
@@ -519,25 +639,82 @@ const MainPage: React.FC = () => {
                 <li className="px-4 py-2"><b>Current Status:</b> {u.incident_status}</li>
                 <li className="px-4 py-2"><b>Reporter ID:</b> {u.reporter_id}</li>
 
-              </ul> 
-           ))}
-          {flows.length === 0 && 
-            <ul className="border-t border-black-200 dark:border-black-700">
-              <li className="px-4 py-2">No records available. </li>
             </ul> 
-        }
-      </div>
-        <p>
-          <button
-          onClick={()=>handleRouter()}
-          className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          type="button"
-          >
-          Back
-          </button>
-          </p>
-  </div>
-  );
+         ))}
+        {flows.length === 0 && 
+          <ul className="border-t border-black-200 dark:border-black-700">
+            <li className="px-4 py-2">No records available. </li>
+          </ul> 
+      }
+    </div>
+      {/* Resolution form for IT support users */}
+      {canResolveIncident() && (
+        <div className="mt-4">
+             
+        {/* Display status update message */}
+      {updateSuccess !== null && (
+        <div className={`mx-4 p-3 rounded ${updateSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+          {updateSuccess 
+            ? "Incident successfully marked as resolved!" 
+            : "Failed to update incident status. Please try again."}
+        </div>
+      )}
+          {!showResolutionForm ? (
+            <p className="mb-4"> 
+              <button
+                onClick={handleShowResolutionForm}
+                className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                type="button"
+              >
+                Resolve Incident
+              </button>
+            </p>
+          ) : (
+            <div className="bg-gray-50 p-4 rounded-md border border-gray-200 mb-4">
+              <label htmlFor="resolution-details" className="block text-black font-medium mb-2">
+                Resolution Details
+              </label>
+              <textarea
+                id="resolution-details"
+                value={resolutionDetails}
+                onChange={(e) => setResolutionDetails(e.target.value)}
+                placeholder="Please provide details about how this incident was resolved..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-black"
+                rows={4}
+                required
+              />
+              <div className="flex justify-end space-x-3 mt-3">
+                <button
+                  onClick={() => setShowResolutionForm(false)}
+                  className="bg-white text-gray-700 px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                  type="button"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleResolveIncident}
+                  disabled={isUpdating || !resolutionDetails.trim()}
+                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  type="button"
+                >
+                  {isUpdating ? "Updating..." : "Submit & Resolve"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      <p className="mb-4"> 
+            <button
+            onClick={()=>handleRouter()}
+            className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            type="button"
+            >
+              Back
+            </button>
+      </p>
+</div>
+);
 }
 
 export default MainPage;

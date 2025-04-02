@@ -2,9 +2,10 @@
 import React from 'react';
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getRequirementwithId, getRequirementFlowithId, getCurrUserData, getStakeholderswithId} from '../../../../../hooks/db.js'
-import { auth } from '../../../../../firebaseConfig.js';
+import { getRequirementwithId, getRequirementFlowithId, getCurrUserData, getStakeholderswithId} from '../../../../hooks/db.js'
+import { auth } from '../../../../firebaseConfig.js';
 import { userInfo } from 'os';
+import { updateRequirementStatus } from '../../../../hooks/db.js'
 
 type User = {
   rol:string,
@@ -36,6 +37,7 @@ type Requirement = {
   request_goals:string,
   workarounds_description:string,
   supporting_documents:string // temporary
+  assigned_to_id: number
 }[]; 
 
 type Workflow = {
@@ -67,6 +69,14 @@ const MainPage: React.FC = () => {
   const [uDatafromDb, setUdata] = useState<User>([]);
   const router = useRouter();
   const [currUser, setCurrUser] = useState(auth.currentUser); // Start with initial auth state
+  const [isITSupport, setIsITSupport] = useState(false);
+  // Added for resolution functionality:
+  const [isAssignedToMe, setIsAssignedToMe] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateSuccess, setUpdateSuccess] = useState<boolean | null>(null);
+  const [resolutionDetails, setResolutionDetails] = useState("");
+  const [showResolutionForm, setShowResolutionForm] = useState(false);
+
   
     useEffect(() => {
       const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -103,6 +113,7 @@ const MainPage: React.FC = () => {
             data_requirement:(u as any)["data_requirement"],
             dependencies:(u as any)["dependencies"],
             organization:(u as any)["organization"],
+            assigned_to_id: (u as any)["assigned_to_id"],
             exist_workarounds:(u as any)["exist_workarounds"],
             request_goals:(u as any)["request_goals"],
             workarounds_description:(u as any)["workarounds_description"],
@@ -169,6 +180,7 @@ const MainPage: React.FC = () => {
             manager_id: (u as any)["manager_id"]
             }
            }); 
+           tasks.sort((a, b) => b.order - a.order); //workflow was not displayed sorted
            setFlows(tasks);
         }
         else
@@ -184,6 +196,20 @@ const MainPage: React.FC = () => {
         fetch();
     });
 
+    useEffect(() => {
+      if (uDatafromDb.length > 0 && requirements.length > 0) {
+        const user = uDatafromDb[0];
+        const requirement = requirements[0];
+    
+        if (user.rol === "IT") {
+          setIsITSupport(true);
+          if (requirement.assigned_to_id === user.id) {
+            setIsAssignedToMe(true);
+          }
+        }
+      }
+    }, [uDatafromDb, requirements]);
+
     useEffect(() => 
       {
         const fetch = async(): Promise<void>=>{
@@ -198,6 +224,39 @@ const MainPage: React.FC = () => {
     localStorage.clear();
     router.back();
   }
+
+  const handleResolveRequirement = async () => {
+    if (!currUser || !isITSupport || !isAssignedToMe) return;
+  
+    const requirementId = localStorage.getItem("requirement_id");
+    if (!requirementId || !resolutionDetails.trim()) {
+      alert("Please provide resolution details.");
+      return;
+    }
+  
+    const confirmResolve = window.confirm("Mark this requirement as resolved?");
+    if (!confirmResolve) return;
+  
+    setIsUpdating(true);
+    try {
+      const result = await updateRequirementStatus(requirementId, "Resolved", resolutionDetails);
+      if (result === 0) {
+        setUpdateSuccess(true);
+        setShowResolutionForm(false);
+        setResolutionDetails("");
+        await handleFetchAll();
+        await handleFetchFlow();
+      } else {
+        setUpdateSuccess(false);
+      }
+    } catch (error) {
+      console.error("Error resolving requirement:", error);
+      setUpdateSuccess(false);
+    } finally {
+      setIsUpdating(false);
+      setTimeout(() => setUpdateSuccess(null), 3000);
+    }
+  };
 
         return(
       <div style={{ display: "flex", flexDirection: "column"}} className="text-black">
@@ -690,13 +749,61 @@ const MainPage: React.FC = () => {
         }
       </div>
 
+      {isITSupport && isAssignedToMe && requirements[0]?.process_type !== "Resolved" && (
+      <div className="mt-4">
+        {updateSuccess !== null && (
+          <div className={`mx-4 p-3 rounded ${updateSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            {updateSuccess ? "Requirement successfully marked as resolved!" : "Failed to update status."}
+          </div>
+        )}
+        {!showResolutionForm ? (
           <button
-          onClick={()=>handleRouter()}
-          className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          type="button"
+            onClick={() => setShowResolutionForm(true)}
+            className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
           >
-          Back
+            Resolve Requirement
           </button>
+        ) : (
+          <div className="bg-gray-50 p-4 rounded-md border border-gray-200 mb-4">
+            <label htmlFor="resolution-details" className="block text-black font-medium mb-2">
+              Resolution Details
+            </label>
+            <textarea
+              id="resolution-details"
+              value={resolutionDetails}
+              onChange={(e) => setResolutionDetails(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+              rows={4}
+            />
+            <div className="flex justify-end space-x-3 mt-3">
+              <button
+                onClick={() => setShowResolutionForm(false)}
+                className="bg-white text-gray-700 px-4 py-2 rounded-md border border-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResolveRequirement}
+                disabled={isUpdating || !resolutionDetails.trim()}
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50"
+              >
+                {isUpdating ? "Updating..." : "Submit & Resolve"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    )}
+
+          <div className="mt-4">
+            <button
+            onClick={()=>handleRouter()}
+            className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            type="button"
+            >
+            Back
+            </button>
+          </div>
   </div>
   );
 }
