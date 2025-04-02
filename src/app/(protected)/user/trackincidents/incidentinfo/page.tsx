@@ -2,7 +2,16 @@
 import React from 'react';
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {getFlowithId, getIncidentwithId, getCurrUserData, updateIncidentStatus} from '../../../../../hooks/db.js'
+import {
+  getFlowithId, 
+  getIncidentwithId, 
+  getCurrUserData, 
+  updateIncidentStatus,
+  getUsersDataDic,
+  updateIncidentState,
+  escalateIncident,
+  getAllGroups
+} from '../../../../../hooks/db.js'
 import { auth } from '../../../../../firebaseConfig.js';
 import { updateWorkflowManager } from '../../../../../hooks/db.js';
 import { getCookie } from "../../../../../hooks/cookies";
@@ -39,6 +48,14 @@ type Workflow = {
   manager_id:number
 }[];  
 
+// Available incident states
+const INCIDENT_STATES = [
+  "Sent",
+  "Assigned",
+  "Solving",
+  "Escalated",
+  "Resolved"
+];
 
 const MainPage: React.FC = () => {
   const [uid, setUid] = useState("");
@@ -53,7 +70,19 @@ const MainPage: React.FC = () => {
   const [resolutionDetails, setResolutionDetails] = useState("");
   const [showResolutionForm, setShowResolutionForm] = useState(false);
   const router = useRouter();
-  const [currUser, setCurrUser] = useState(auth.currentUser); 
+  const [currUser, setCurrUser] = useState(auth.currentUser);
+  
+  // State for escalation & state management 
+  const [activeTab, setActiveTab] = useState<string>("state");
+  const [selectedEscalationUser, setSelectedEscalationUser] = useState<any>(null); //
+  const [escalationComment, setEscalationComment] = useState("");
+  const [isEscalating, setIsEscalating] = useState(false); //
+  const [escalationSuccess, setEscalationSuccess] = useState(false);
+  const [isGroupSelected, setIsGroupSelected] = useState(false);
+  const [escalationTargets, setEscalationTargets] = useState<any[]>([]); //track the selected escalation target
+  const [selectedState, setSelectedState] = useState<string>(""); //Scalation commentss
+  const [isChangingState, setIsChangingState] = useState(false);
+  const [stateChangeSuccess, setStateChangeSuccess] = useState(false);
   
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -95,6 +124,53 @@ const MainPage: React.FC = () => {
       checkUserRole();
     }
   }, [currUser, incidents, isRoleChecked]);
+
+  // Fetch escalation targets (grupos y usuarios) deshabilitada hasta prox sprint
+  // Fetch escalation targets (users only)
+// Fetch escalation targets (users only)
+// Fetch escalation targets (users only)
+useEffect(() => {
+  const fetchEscalationTargets = async () => {
+    if (!isITSupport) return;
+    
+    try {
+      // Get current user's data to identify and exclude them
+      const currentUserData = await getCurrUserData();
+      const currentUserId = currentUserData?.id;
+      
+      // Fetch all users from Firebase
+      const allUsers = await getUsersDataDic();
+      const usersList = allUsers
+        .map((userTuple: any) => {
+          const userData = userTuple[0];
+          // Create a full name using available name fields
+          const firstName = userData.name || '';
+          const lastName1 = userData.last_name_1 || '';
+          
+          // Format name as "First Last" 
+          let displayName = firstName;
+          if (lastName1) displayName += ' ' + lastName1;
+          
+          // If no name is available, use ID as fallback
+          if (!displayName.trim()) displayName = `User ${userData.id}`;
+          
+          return {
+            id: userData.id,
+            displayName: displayName,
+            email: userData.email || ''
+          };
+        })
+        // Filter out the current user
+        .filter(user => user.id !== currentUserId);
+      
+      setEscalationTargets(usersList);
+    } catch (error) {
+      console.error("Error fetching escalation targets:", error);
+    }
+  };
+  
+  fetchEscalationTargets();
+}, [isITSupport]);
   
   const handleFetchAll = async (): Promise<void> => { 
     try {
@@ -132,6 +208,11 @@ const MainPage: React.FC = () => {
            }); 
            
         setIncidents(tasks);
+        
+        // Initialize selected state with current incident status if it exists
+        if (tasks.length > 0) {
+          setSelectedState(tasks[0].incident_status || "");
+        }
       } else {
         console.log("nothing retrieved :(");
       }
@@ -253,7 +334,6 @@ const MainPage: React.FC = () => {
     }
   };
   
-
   // Check if incident can be resolved (not already resolved)
   const canResolveIncident = () => {
     if (!incidents.length) return false;
@@ -263,6 +343,197 @@ const MainPage: React.FC = () => {
            isAssignedToMe && 
            incident.incident_status !== "Resolved";
   };
+  
+  // Handle escalation selection change
+  
+  // Handle escalation selection change
+  const handleEscalationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const targetValue = e.target.value;
+  const userId = parseInt(targetValue);
+  setSelectedEscalationUser(userId);
+};
+  
+  // Handle escalation comment change
+  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEscalationComment(e.target.value);
+  };
+  
+  // Handle state change
+  const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedState(e.target.value);
+  };
+  
+  // Handle state change submission
+  const handleChangeState = async () => {
+    if (!selectedState) {
+      alert("Please select a state.");
+      return;
+    }
+    
+    setIsChangingState(true);
+    
+    try {
+      // Get current user ID
+      let currentUserId;
+      if (currUser) {
+        // If we have a current user, use their data
+        const userData = await getUsersDataDic();
+        const currentUserData = userData.find((u: any) => 
+          u[1] === currUser.uid
+        );
+        
+        if (currentUserData && currentUserData[0] && 
+            typeof currentUserData[0] === 'object' && 
+            'id' in currentUserData[0]) {
+          currentUserId = currentUserData[0].id;
+        } else {
+          // Fallback to user UID
+          currentUserId = currUser.uid;
+        }
+      } else {
+        // Fallback to a default ID
+        currentUserId = incidents[0]?.reporter_id || 1;
+      }
+      
+      // Get incident ID
+      const incidentId = incidents[0]?.incident_id;
+      
+      if (!incidentId) {
+        throw new Error("No incident ID found");
+      }
+      
+      console.log("Updating incident state:", {
+        incidentId,
+        newState: selectedState,
+        updatedBy: currentUserId
+      });
+      
+      // Call the Firebase function to update the state
+      const success = await updateIncidentState(
+        incidentId,
+        selectedState,
+        currentUserId
+      );
+      
+      if (success) {
+        setIsChangingState(false);
+        setStateChangeSuccess(true);
+        
+        // Update local incident state for UI feedback
+        if (incidents.length > 0) {
+          const updatedIncidents = [...incidents];
+          updatedIncidents[0].incident_status = selectedState;
+          setIncidents(updatedIncidents);
+        }
+        
+        // Refresh workflow data to show new entry
+        await handleFetchFlow();
+        
+        // Reset success message after 3 seconds
+        setTimeout(() => {
+          setStateChangeSuccess(false);
+        }, 3000);
+      } else {
+        throw new Error("Failed to update incident state");
+      }
+    } catch (error) {
+      console.error("Error changing state:", error);
+      setIsChangingState(false);
+      alert("Failed to change incident state. Please try again.");
+    }
+  };
+  
+  // Handle escalation submission
+  const handleEscalateIncident = async () => {
+    if (selectedEscalationUser === null) {
+      alert("Please select a person or group to escalate to.");
+      return;
+    }
+    
+    if (!escalationComment.trim()) {
+      alert("Please provide details about why you are escalating this incident.");
+      return;
+    }
+    
+    setIsEscalating(true);
+    
+    try {
+      // Get current user ID
+      let currentUserId;
+      if (currUser) {
+        // If we have a current user, use their data
+        const userData = await getUsersDataDic();
+        const currentUserData = userData.find((u: any) => 
+          u[1] === currUser.uid
+        );
+        
+        if (currentUserData && currentUserData[0] && 
+            typeof currentUserData[0] === 'object' && 
+            'id' in currentUserData[0]) {
+          currentUserId = currentUserData[0].id;
+        } else {
+          // Fallback to user UID
+          currentUserId = currUser.uid;
+        }
+      } else {
+        // Fallback to a default ID
+        currentUserId = incidents[0]?.reporter_id || 1;
+      }
+      
+      // Get incident ID
+      const incidentId = incidents[0]?.incident_id;
+      
+      if (!incidentId) {
+        throw new Error("No incident ID found");
+      }
+      
+      console.log("Escalating incident:", {
+        incidentId,
+        targetId: selectedEscalationUser,
+        comment: escalationComment,
+        updatedBy: currentUserId,
+        isGroup: isGroupSelected
+      });
+      
+      // Call the Firebase function to escalate the incident
+      const success = await escalateIncident(
+        incidentId,
+        selectedEscalationUser,
+        escalationComment,
+        currentUserId,
+      );
+      
+      if (success) {
+        setIsEscalating(false);
+        setEscalationSuccess(true);
+        
+        // Automatically set state to "Escalated"
+        setSelectedState("Escalated");
+        
+        // Update local incident state for UI feedback
+        if (incidents.length > 0) {
+          const updatedIncidents = [...incidents];
+          updatedIncidents[0].incident_status = "Escalated";
+          setIncidents(updatedIncidents);
+        }
+        
+        // Refresh workflow data to show new entry
+        await handleFetchFlow();
+        
+        // Reset success message after 3 seconds
+        setTimeout(() => {
+          setEscalationSuccess(false);
+        }, 3000);
+        window.location.href = "/user/trackincidents";
+      } else {
+        throw new Error("Failed to escalate incident");
+      }
+    } catch (error) {
+      console.error("Error escalating incident:", error);
+      setIsEscalating(false);
+      alert("Failed to escalate incident. Please try again.");
+    }
+  };
 
   return(
     <div style={{ display: "flex", flexDirection: "column"}} className="text-black">
@@ -271,7 +542,124 @@ const MainPage: React.FC = () => {
           <h2 style={{ fontSize: "30px", fontWeight: "bold", textAlign: "center" }}>
             Major Incident Details
           </h2>
-    </div>
+        </div>
+        
+        {/* Unified Incident Management Section */}
+        {isITSupport && isAssignedToMe && (
+          <div className="px-4 pb-4 mb-4 border-b border-gray-200">
+            <h3 className="text-xl font-bold mb-3">Incident Management</h3>
+            
+            {/* Simple tab navigation */}
+            <div className="flex mb-4 border-b">
+              <button 
+                className={`py-2 px-4 ${activeTab === 'state' ? 'border-b-2 border-blue-600 font-medium' : 'text-gray-500'}`}
+                onClick={() => setActiveTab('state')}
+              >
+                Change State
+              </button>
+              <button 
+                className={`py-2 px-4 ${activeTab === 'escalate' ? 'border-b-2 border-blue-600 font-medium' : 'text-gray-500'}`}
+                onClick={() => setActiveTab('escalate')}
+              >
+                Escalate Incident
+              </button>
+            </div>
+            
+            {/* State change form */}
+            {activeTab === 'state' && (
+              <div className="mb-4">
+                <div className="mb-4">
+                  <label htmlFor="stateSelect" className="block mb-2 font-medium">
+                    Select new state:
+                  </label>
+                  <select
+                    id="stateSelect"
+                    className="w-full md:w-1/2 lg:w-1/3 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={handleStateChange}
+                    value={selectedState}
+                    disabled={isChangingState}
+                  >
+                    <option value="">-- Select state --</option>
+                    {INCIDENT_STATES.map((state, index) => (
+                      <option key={index} value={state}>
+                        {state}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <button
+                  onClick={handleChangeState}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-gray-400"
+                  disabled={!selectedState || isChangingState}
+                >
+                  {isChangingState ? "Updating..." : "Update State"}
+                </button>
+                
+                {/* Success message */}
+                {stateChangeSuccess && (
+                  <div className="mt-3 p-2 bg-green-100 text-green-700 rounded-md">
+                    Incident state successfully updated!
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Escalation form */}
+            {activeTab === 'escalate' && (
+              <div>
+                <div className="mb-4">
+                  <label htmlFor="escalationSelect" className="block mb-2 font-medium">
+                    Select user to escalate to:
+                  </label>
+                  <select
+                    id="escalationSelect"
+                    className="w-full md:w-1/2 lg:w-1/3 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={handleEscalationChange}
+                    value={selectedEscalationUser || ""}
+                    disabled={isEscalating}
+                  >
+                    <option value="">-- Select user --</option>
+                    {escalationTargets.map(user => (
+                      <option key={`user_${user.id}`} value={user.id}>
+                        {user.displayName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="mb-4">
+                  <label htmlFor="escalationComment" className="block mb-2 font-medium">
+                    Escalation details:
+                  </label>
+                  <textarea
+                    id="escalationComment"
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
+                    placeholder="Provide details about why you are escalating this incident..."
+                    onChange={handleCommentChange}
+                    value={escalationComment}
+                    disabled={isEscalating}
+                  ></textarea>
+                </div>
+                
+                <button
+                  onClick={handleEscalateIncident}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-gray-400"
+                  disabled={selectedEscalationUser === null || !escalationComment.trim() || isEscalating}
+                >
+                  {isEscalating ? "Escalating..." : "Escalate Incident"}
+                </button>
+                
+                {/* Success message */}
+                {escalationSuccess && (
+                  <div className="mt-3 p-2 bg-green-100 text-green-700 rounded-md">
+                    Incident successfully escalated!
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
   
     
     {incidents.map((u, index) => (
@@ -483,7 +871,7 @@ const MainPage: React.FC = () => {
                   whiteSpace: "nowrap", // Prevent wrapping
                 }}
               >
-                Incident Status:
+               Incident Status:
               </td>
               <td
                 style={{
