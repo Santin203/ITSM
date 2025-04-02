@@ -2,7 +2,7 @@
 import React from 'react';
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getRequirementwithId, getRequirementFlowithId, getCurrUserData} from '../../../../../hooks/db.js'
+import { getRequirementwithId, getRequirementFlowithId, getCurrUserData, getStakeholderswithId} from '../../../../../hooks/db.js'
 import { auth } from '../../../../../firebaseConfig.js';
 import { userInfo } from 'os';
 
@@ -23,7 +23,7 @@ type Requirement = {
   requirement_id:number,
   process_type:string,
   requirement_submit_date:string,
-  communication_strategy:string,
+  contact_information:string,
   contact_email:string,
   contact_first_name:string,
   contact_last_name:string,
@@ -48,10 +48,20 @@ type Workflow = {
   manager_id:number
 }[];  
 
+type Stakeholder = {
+  email:string,
+  first_name: string,
+  last_name:string,
+  phone:string,
+  requirement_id:number,
+  role:string
+}[];
+
 const MainPage: React.FC = () => {
 
   const [uid, setUid] = useState("");
   const [requirements, setRequirements] = useState<Requirement>([]);
+  const [stakesholders, setStakeholders] = useState<Stakeholder>([]);
   const [flows, setFlows] = useState<Workflow>([]);
   const [flagflow, setFlagFlow] = useState("");
   const [uDatafromDb, setUdata] = useState<User>([]);
@@ -83,7 +93,7 @@ const MainPage: React.FC = () => {
             +((u as any)["requirement_submit_date"].toDate().getMonth()+1).toString().padStart(2, "0") + '-'
             + ((u as any)["requirement_submit_date"].toDate().getDate()).toString().padStart(2, "0"),
             process_type: (u as any)["process_type"],
-            communication_strategy:(u as any)["communication_strategy"],
+            contact_information:(u as any)["contact_information"],
             contact_first_name:(u as any)["contact_first_name"],
             contact_last_name:(u as any)["contact_last_name"],
             contact_middle_initial:(u as any)["contact_middle_initial"],
@@ -120,7 +130,25 @@ const MainPage: React.FC = () => {
         }
         else
           console.log("nothing retrieved 2 :(");
-        
+
+          const stakesData = await getStakeholderswithId(Number(localStorage.getItem("requirement_id")));
+          if(stakesData)
+          {
+            const stakes = stakesData.map((u) => {
+              return {  //return data compatible with data types specified in the tasks variable 
+                email: (u as any)["email"] ,
+                first_name: (u as any)["first_name"],
+                last_name: (u as any)["last_name"],
+                phone: (u as any)["phone"],
+                requirement_id: (u as any)["requirement_id"],
+                role: (u as any)["role"]
+                }
+               }); 
+               
+               setStakeholders(stakes);
+            }
+            else
+              console.log("nothing retrieved 3 :(");
     }
 
     const handleFetchFlow = async (): Promise<void> => { 
@@ -275,7 +303,7 @@ const MainPage: React.FC = () => {
               </tbody>
               </table>
       ))}
-      <h2>Please fill out as many sections as you can.</h2>
+
       {requirements.map((u, index) => (
         
         <div key={index}>
@@ -404,6 +432,104 @@ const MainPage: React.FC = () => {
               </tbody>
               </table>
 
+              <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> List Stakeholders</h1>
+              {stakesholders.map((k, index2) => (
+                <div key={index2}>
+              
+              <table
+              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+            >
+              <tbody>
+              <tr>
+                  <td
+                    style={{
+                      padding: "40px",
+                      border: "1px solid #ccc",
+                      width: "300px", // First column takes less space
+                      fontWeight: "bold",
+                    }}
+                  >
+                    First Name, Last Name
+                  </td>
+                  <td
+                    style={{
+                      padding: "10px",
+                      border: "1px solid #ccc",
+                      width: "100%",
+                    }}
+                  >
+                 {k.first_name} {k.last_name}
+                  </td>
+                </tr>
+                <tr>
+                <td
+                  style={{
+                    padding: "20px",
+                    border: "1px solid #ccc",
+                    width: "200px", // First column takes less space
+                    fontWeight: "bold",
+                  }}
+                >
+                  Role or Position
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "100%",
+                  }}
+                > 
+                  {k.role}
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style={{
+                    padding: "20px",
+                    border: "1px solid #ccc",
+                    width: "200px", // First column takes less space
+                    fontWeight: "bold",
+                  }}
+                >
+                  Phone Number
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "100%",
+                  }}
+                >
+                {k.phone}  
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style={{
+                    padding: "20px",
+                    border: "1px solid #ccc",
+                    width: "200px", // First column takes less space
+                    fontWeight: "bold",
+                  }}
+                >
+                  Email Address
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "100%",
+                  }}
+                >
+                  {k.email}
+                </td>
+                
+              </tr>
+              </tbody>
+              </table>
+              </div>
+              ))}
+
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Contact Information for the Business Administrator (Functional Unit Manager)</h1>
               <table
               key=
@@ -511,7 +637,7 @@ const MainPage: React.FC = () => {
                       width: "100%",
                     }}
                   >
-                  {u.communication_strategy}
+                  {u.contact_information}
                   </td>
                 </tr>
               </tbody>

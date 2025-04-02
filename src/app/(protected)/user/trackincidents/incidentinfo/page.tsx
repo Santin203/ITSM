@@ -17,7 +17,6 @@ type Incident = {
   incident_logged:string,
   it_id:number,
   root_cause:string,
-  stakeholder_details:string,
   organization:string,
   department:string,
   section:string,
@@ -79,7 +78,6 @@ const MainPage: React.FC = () => {
             incident_logged:(u as any)["incident_logged"],
             it_id:(u as any)["it_id"],
             root_cause:(u as any)["root_cause"],
-            stakeholder_details:(u as any)["stakeholder_details"],
             organization:(u as any)["organization"],
             department:(u as any)["department"],
             section:(u as any)["section"],
@@ -213,7 +211,7 @@ const MainPage: React.FC = () => {
                     fontWeight: "bold",
                   }}
                 >
-                  Section: {u.section}
+                  Section:
                 </td>
                 <td
                   style={{
@@ -492,7 +490,8 @@ const MainPage: React.FC = () => {
                     width: "100%",
                   }}
                 >
-                  {u.incident_resolution_date}
+                  {u.incident_resolution_date.substring(0,4) === "1900" && "N/A"}
+                  {u.incident_resolution_date.substring(0,4) !== "1900" && u.incident_resolution_date}
                 </td>
               </tr>
           </tbody>
