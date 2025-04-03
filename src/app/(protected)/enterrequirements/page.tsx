@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DocumentData, Timestamp } from "firebase/firestore";
-import { getAllRequirements, getCurrUserData, addRequirement, addStakeholder } from '../../../../hooks/db.js';
+import { getAllRequirements, getCurrUserData, addRequirement, addStakeholder } from '../../../hooks/db.js';
 
 type Stakeholder = {
   stake_email:string,
@@ -17,7 +17,6 @@ export default function IncidentEntryPage() {
   const router = useRouter();
   const [incidentNumber, setIncidentNumber] = useState("");
   const [reportedBy, setReportedBy] = useState("");
-  const [startDate, setStartDate] = useState("");
   const [user_id, setID] = useState("");
   const [user_email, setEmail] = useState("");
   const [user_rol, setRole] = useState("");
@@ -48,6 +47,7 @@ export default function IncidentEntryPage() {
       workarounds_description:""
     });
     const [inputs, setInputs] = useState<Stakeholder>([]);
+    const [statuss, setStatus] = useState("Sent");
   
 
   useEffect(() => {
@@ -103,7 +103,7 @@ export default function IncidentEntryPage() {
         if(userData.email)
           setEmail(userData.email);
         if(userData.rol)
-          setRole(userData.rol);
+          setRole(userData.rol[0]);
         if(userData.cel_1)
           setCel1(userData.cel_1);
       }
@@ -135,6 +135,8 @@ export default function IncidentEntryPage() {
   
             try{
               const response = await addRequirement({
+              assigned_to_id:-1,
+              requirement_status:statuss,
               brief_description:formData.brief_description,
               contact_email:formData.contact_email,
               contact_first_name:formData.contact_first_name,
@@ -160,7 +162,7 @@ export default function IncidentEntryPage() {
             {
               console.log("Success")
               alert("Requirement Submitted!");
-              window.location.href = "/user/trackrequirements";
+              window.location.href = "/trackrequirements";
             } 
             else
             {
@@ -381,6 +383,16 @@ export default function IncidentEntryPage() {
                 </tr>
               </tbody>
               </table>
+              <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Current Status </h1>
+              <input
+                type="text"
+                id="statuss"
+                name="statuss"
+                value={statuss}
+                className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                style={{ width: "100%" }}
+                readOnly
+              />
               
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Is this request a New Business Process or Enhancement to an existing Process?</h1>
               <select
@@ -391,7 +403,7 @@ export default function IncidentEntryPage() {
                     onChange={(e) => setProcessType(e.target.value)}
                     className="dark:text-black border rounded px-3 py-2 mb-4 w-full"
                   >
-                    <option value="" disabled>Select Status</option>
+                    <option value="" disabled>Select Type</option>
                     <option value ="New">New</option>
                     <option value="Enhancement">Enhancement</option>
                   </select>
@@ -409,7 +421,6 @@ export default function IncidentEntryPage() {
                     <option value = "Yes">Yes</option>
                     <option value="No">No</option>
               </select>
-
               
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> If you have selected ‘Yes’ for the above previous question then please describe workaround(s) in the box provided below:</h1>
               <table

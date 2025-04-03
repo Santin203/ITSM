@@ -103,6 +103,18 @@ export async function getCurrUserData()
   }
 }
 
+export async function getUserDatawithId(id) 
+{
+  const incidentsRef = collection(db, "Users");
+  const usersIncidentsCol = query(incidentsRef, where("id", "==", Number(id)));
+  const incidentFlowsSnapshot = await getDocs(usersIncidentsCol);
+  const flowsData = incidentFlowsSnapshot.docs.map(doc => doc.data());
+  if(flowsData)
+  {
+    return flowsData;
+  }
+}
+
 export async function getCurrUserIncidentsData() 
 {
   const currUser = auth.currentUser;
@@ -549,6 +561,8 @@ export async function addIncidents(i) {
 export async function addRequirement(i) {
   // Add a new document with a generated id.
   const docRef = await addDoc(collection(db, "Requirements"), {
+    assigned_to_id:i.assigned_to_id,
+    requirement_status:i.requirement_status,
     brief_description:i.brief_description,
     contact_email:i.contact_email,
     contact_first_name:i.contact_first_name,

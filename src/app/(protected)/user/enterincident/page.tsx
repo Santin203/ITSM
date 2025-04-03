@@ -24,7 +24,7 @@ export default function IncidentEntryPage() {
     incident_start_date:"",
     business_impact:"",
     incident_logged:"",
-    it_id:"",
+    assigned_to_id:"",
     root_cause:"",
     stakeholder_details:"",
     user_details:"",
@@ -144,7 +144,7 @@ export default function IncidentEntryPage() {
             incident_resolution_date: Timestamp.fromDate(resoldate),
             incident_start_date: Timestamp.fromDate(new Date(startDate)),
             incident_status:statuss,
-            it_id: formData.it_id,
+            it_id: formData.assigned_to_id,
             organization: organization,
             reporter_id: user_id,
             root_cause: formData.root_cause,
@@ -157,7 +157,7 @@ export default function IncidentEntryPage() {
           {
             console.log("Success")
             alert("Incident Submitted!");
-            window.location.href = "/user/trackincidents";
+            window.location.href = "/trackincidents";
           }
               
           else
@@ -549,7 +549,7 @@ export default function IncidentEntryPage() {
                     whiteSpace: "nowrap", // Prevent wrapping
                   }}
                 >
-                  Incident Manager/IT ID
+                  Incident Manager/IT
                 </td>
                 <td
                   style={{
@@ -563,7 +563,7 @@ export default function IncidentEntryPage() {
                   id="it_id"
                   name="it_id"
                   onChange={handleChange}
-                  value={formData.it_id}
+                  value={formData.assigned_to_id}
                   className="text-black border rounded px-4 py-2 mb-4 w-medium"
                   style={{ width: "100%" }}
                   

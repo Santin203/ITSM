@@ -4,18 +4,18 @@ import { getCookie } from '../../../hooks/cookies';
 import { getCurrUserRequirementsData, getITUserRequirementsData } from '../../../hooks/db.js';
 type Requirement = {
   submitter_id:number,
-  process_type:string,
   requirement_submit_date:string,
   requirement_id:number,
   requirementType?:string, 
   assigned_to_id?:number 
+  requirement_status:string
 }[];
 
 type Order = {
   submitter_id:number,
-  process_type:number,
   requirement_submit_date:number,
   requirement_id:number
+  requirement_status:number
 };  
 
 
@@ -23,7 +23,7 @@ const MainPage: React.FC = () => {
 
   const [uid, setUid] = useState("");
   const [requirements, setRequirements] = useState<Requirement>([]);
-  const [order, setOrder] = useState<Order>({requirement_id: 0, requirement_submit_date: 0, process_type: 0, submitter_id: 0 });
+  const [order, setOrder] = useState<Order>({requirement_id: 0, requirement_submit_date: 0, requirement_status: 0, submitter_id: 0 });
   const [date, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [status, setStatus] = useState("");
@@ -57,7 +57,7 @@ const MainPage: React.FC = () => {
             requirement_submit_date: ((u as any)[0]["requirement_submit_date"].toDate().getFullYear()).toString()+'-'
             +((u as any)[0]["requirement_submit_date"].toDate().getMonth()+1).toString().padStart(2, "0") + '-'
             + ((u as any)[0]["requirement_submit_date"].toDate().getDate()).toString().padStart(2, "0"),
-            process_type: (u as any)[0]["process_type"],
+            requirement_status: (u as any)[0]["requirement_status"],
             docId: (u as any)[1],
             requirementType: (u as any)[0]["requirementType"] // Preserve the requirementType
           };
@@ -79,7 +79,7 @@ const MainPage: React.FC = () => {
             requirement_submit_date: ((u as any)[0]["requirement_submit_date"].toDate().getFullYear()).toString()+'-'
             +((u as any)[0]["requirement_submit_date"].toDate().getMonth()+1).toString().padStart(2, "0") + '-'
             + ((u as any)[0]["requirement_submit_date"].toDate().getDate()).toString().padStart(2, "0"),
-            process_type: (u as any)[0]["process_type"],
+            requirement_status: (u as any)[0]["requirement_status"],
             docId: (u as any)[1],
             requirementType: "sent" // Since this is the current user's data, it's always "sent"
           }
@@ -125,7 +125,7 @@ const MainPage: React.FC = () => {
     }
     
     // Filter by status
-    const matchesStatus = status === "" || String(u.process_type) === String(status);
+    const matchesStatus = status === "" || String(u.requirement_status) === String(status);
     
     // Filter by date range
     const matchesDate = date === "" && endDate === "" || compareDates(date, u.requirement_submit_date, endDate);
@@ -155,7 +155,7 @@ const MainPage: React.FC = () => {
   // Alternar orden y resetear las demás columnas
   const handleSort = (col: keyof Order) => {
     setOrder((o) => {
-      const newOrder: Order = { requirement_id: 0, requirement_submit_date: 0, process_type: 0, submitter_id: 0 };
+      const newOrder: Order = { requirement_id: 0, requirement_submit_date: 0, requirement_status: 0, submitter_id: 0 };
       if(o[col] >= 0)
         newOrder[col] = -1;
       else
@@ -287,10 +287,10 @@ const MainPage: React.FC = () => {
                             </button>
               </th>
               <th className="px-4 py-2 text-left">Status<button
-                            onClick={() => handleSort("process_type")}
+                            onClick={() => handleSort("requirement_status")}
                             className="px-4 py-2 text-left"
                             >
-                            <span>{order["process_type"] >= 0 ? '>' : '<'}</span>
+                            <span>{order["requirement_status"] >= 0 ? '>' : '<'}</span>
                             </button>
               </th>
               <th className="px-4 py-2 text-left">Submitter ID</th>
@@ -309,7 +309,7 @@ const MainPage: React.FC = () => {
                   )}
                   <td className="px-4 py-2">{u.requirement_id}</td>
                   <td className="px-4 py-2">{String(u.requirement_submit_date)}</td>
-                  <td className="px-4 py-2">{u.process_type}</td>
+                  <td className="px-4 py-2">{u.requirement_status}</td>
                   <td className="px-4 py-2">{u.submitter_id}</td>
                   <td className="px-4 py-2">
                     <button
