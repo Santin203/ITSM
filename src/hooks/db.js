@@ -1,5 +1,5 @@
 import { confirmPasswordReset, sendPasswordResetEmail, signOut, getAuth, onAuthStateChanged } from "firebase/auth";
-import {collection, doc, getDoc, getDocs, getFirestore, query, where, writeBatch, updateDoc } from "firebase/firestore";
+import {collection, doc, getDoc, getDocs, getFirestore, query,where, writeBatch, updateDoc , addDoc} from "firebase/firestore";
 import { app, auth, db } from "../firebaseConfig";
 import { deleteCookie } from "../hooks/cookies";
 import { type } from "os";
@@ -100,6 +100,18 @@ export async function getCurrUserData()
     {
       return data;
     }
+  }
+}
+
+export async function getUserDatawithId(id) 
+{
+  const incidentsRef = collection(db, "Users");
+  const usersIncidentsCol = query(incidentsRef, where("id", "==", Number(id)));
+  const incidentFlowsSnapshot = await getDocs(usersIncidentsCol);
+  const flowsData = incidentFlowsSnapshot.docs.map(doc => doc.data());
+  if(flowsData)
+  {
+    return flowsData;
   }
 }
 
@@ -479,6 +491,18 @@ export async function getRequirementwithId(i_id)
   }
 }
 
+export async function getStakeholderswithId(i_id)
+{
+  const requirementsRef = collection(db, "Stakeholders");
+  const usersRequirementsCol = query(requirementsRef, where("requirement_id", "==", i_id));
+  const usersRequirementsSnapshot = await getDocs(usersRequirementsCol);
+  const requirementsData = usersRequirementsSnapshot.docs.map(doc => doc.data());
+  if(requirementsData)
+  {
+    return requirementsData;
+  }
+}
+
 export async function getAllIncidents() {
   const incidentsRef = collection(db, "Incidents");
   const incidentsSnapshot = await getDocs(incidentsRef);
@@ -638,3 +662,88 @@ export async function updateRequirementStatus(requirementId, newStatus, resoluti
     return 1;
   }
 }
+
+
+
+export async function getAllRequirements() {
+  const incidentsRef = collection(db, "Requirements");
+  const incidentsSnapshot = await getDocs(incidentsRef);
+  const incidentsData = incidentsSnapshot.docs.map(doc => [doc.data(), doc.id]);
+  return incidentsData;
+}
+
+
+export async function addIncidents(i) {
+  // Add a new document with a generated id.
+  const docRef = await addDoc(collection(db, "Incidents"), {
+  additional_details: i.additional_details,
+  business_impact: i.business_impact,
+  department: i.department,
+  description: i.description,
+  incident_id: i.incident_id,
+  incident_logged: i.incident_logged,
+
+  incident_report_date: i.incident_report_date,
+  incident_resolution_date: i.incident_resolution_date,
+  incident_start_date: i.incident_start_date,
+  incident_status:i.incident_status,
+  it_id: i.it_id,
+  organization: i.organization,
+  reporter_id:i.reporter_id,
+  root_cause: i.root_cause,
+  section:i.section,
+  title:i.title,
+  user_details:i.user_details
+  });
+
+
+  console.log("Document written with ID: ", docRef.id);
+  return (0);
+}
+
+
+export async function addRequirement(i) {
+  // Add a new document with a generated id.
+  const docRef = await addDoc(collection(db, "Requirements"), {
+    assigned_to_id:i.assigned_to_id,
+    requirement_status:i.requirement_status,
+    brief_description:i.brief_description,
+    contact_email:i.contact_email,
+    contact_first_name:i.contact_first_name,
+    contact_information:i.contact_information,
+    contact_last_name:i.contact_last_name,
+    contact_phone:i.contact_phone,
+    contact_role:i.contact_role,
+    data_requirement:i.data_requirement,
+    dependencies:i.dependencies,
+    detailed_description:i.detailed_description,
+    exist_workarounds:i.exist_workarounds,
+    process_type:i.process_type,
+    request_goals:i.request_goals,
+    requirement_id:i.requirement_id,
+    requirement_submit_date: i.requirement_submit_date,
+    submitter_id: i.submitter_id,
+    supporting_documents:i.supporting_documents,
+    workarounds_description:i.workarounds_description  
+  });
+
+
+  console.log("Document written with ID: ", docRef.id);
+  return (0);
+}
+
+export async function addStakeholder(i) {
+  // Add a new document with a generated id.
+  const docRef = await addDoc(collection(db, "Stakeholders"), {
+    email:i.stake_email,
+    first_name: i.stake_first_name,
+    last_name:i.stake_last_name,
+    phone:i.stake_phone,
+    requirement_id:i.stake_requirement_id,
+    role:i.stake_role
+  });
+
+  console.log("Document written with ID: ", docRef.id);
+  return (0);
+}
+

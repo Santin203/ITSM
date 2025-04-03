@@ -2,7 +2,8 @@
 import React from 'react';
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getRequirementwithId, getRequirementFlowithId, getCurrUserData} from '../../../../hooks/db.js'
+import { getCookie } from '../../../../hooks/cookies';
+import { getRequirementwithId, getRequirementFlowithId, getCurrUserData, getStakeholderswithId, getUserDatawithId} from '../../../../hooks/db.js'
 import { auth } from '../../../../firebaseConfig.js';
 import { userInfo } from 'os';
 import { updateRequirementStatus } from '../../../../hooks/db.js'
@@ -24,7 +25,7 @@ type Requirement = {
   requirement_id:number,
   process_type:string,
   requirement_submit_date:string,
-  communication_strategy:string,
+  contact_information:string,
   contact_email:string,
   contact_first_name:string,
   contact_last_name:string,
@@ -33,11 +34,12 @@ type Requirement = {
   contact_role:string,
   data_requirement:string,
   dependencies:string,
-  exist_workarounds:boolean,
+  exist_workarounds:string,
   request_goals:string,
   workarounds_description:string,
   supporting_documents:string // temporary
-  assigned_to_id: number
+  assigned_to_id: number,
+  requirement_status:string
 }[]; 
 
 type Workflow = {
@@ -50,23 +52,33 @@ type Workflow = {
   manager_id:number
 }[];  
 
+type Stakeholder = {
+  email:string,
+  first_name: string,
+  last_name:string,
+  phone:string,
+  requirement_id:number,
+  role:string
+}[];
+
 const MainPage: React.FC = () => {
 
   const [uid, setUid] = useState("");
   const [requirements, setRequirements] = useState<Requirement>([]);
+  const [stakesholders, setStakeholders] = useState<Stakeholder>([]);
   const [flows, setFlows] = useState<Workflow>([]);
   const [flagflow, setFlagFlow] = useState("");
   const [uDatafromDb, setUdata] = useState<User>([]);
   const router = useRouter();
   const [currUser, setCurrUser] = useState(auth.currentUser); // Start with initial auth state
   const [isITSupport, setIsITSupport] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   // Added for resolution functionality:
   const [isAssignedToMe, setIsAssignedToMe] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateSuccess, setUpdateSuccess] = useState<boolean | null>(null);
   const [resolutionDetails, setResolutionDetails] = useState("");
   const [showResolutionForm, setShowResolutionForm] = useState(false);
-
   
     useEffect(() => {
       const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -93,7 +105,7 @@ const MainPage: React.FC = () => {
             +((u as any)["requirement_submit_date"].toDate().getMonth()+1).toString().padStart(2, "0") + '-'
             + ((u as any)["requirement_submit_date"].toDate().getDate()).toString().padStart(2, "0"),
             process_type: (u as any)["process_type"],
-            communication_strategy:(u as any)["communication_strategy"],
+            contact_information:(u as any)["contact_information"],
             contact_first_name:(u as any)["contact_first_name"],
             contact_last_name:(u as any)["contact_last_name"],
             contact_middle_initial:(u as any)["contact_middle_initial"],
@@ -107,31 +119,54 @@ const MainPage: React.FC = () => {
             exist_workarounds:(u as any)["exist_workarounds"],
             request_goals:(u as any)["request_goals"],
             workarounds_description:(u as any)["workarounds_description"],
-            supporting_documents:(u as any)["supporting_documents"]
+            supporting_documents:(u as any)["supporting_documents"],
+            requirement_status:(u as any)["requirement_status"]
             }
            }); 
            
            setRequirements(tasks);
-        }
-        else
-          console.log("nothing retrieved :(");
+           const subs = await getUserDatawithId(Number((tasks as any)[0]["submitter_id"]));
+            if(subs)
+            {
+              console.log(subs)
+              const user = subs.map((u) => {
+                return {  //return data compatible with data types specified in the tasks variable 
+                  name: (u as any)["name"] ,
+                  last_name_1: (u as any)["last_name_1"],
+                  rol: (u as any)["rol"][0], 
+                  cel_1: (u as any)["cel_1"],
+                  email: (u as any)["email"],
+                  id: (u as any)["id"]
+                  }
+                }); 
+                
+                setUdata(user);
+              }
+            else
+              console.log("nothing retrieved 3 :(");
+      }
+    
 
-        const userData = await getCurrUserData();
-        if(userData)
-        {
-          const udata = {  //return data compatible with data types specified in the tasks variable 
-              name: (userData as any)["name"] ,
-              last_name_1: (userData as any)["last_name_1"],
-              rol: (userData as any)["rol"],
-              cel_1: (userData as any)["cel_1"],
-              email: (userData as any)["email"],
-              id: (userData as any)["id"]
+      const stakesData = await getStakeholderswithId(Number(localStorage.getItem("requirement_id")));
+          if(stakesData)
+          {
+            const stakes = stakesData.map((u) => {
+              return {  //return data compatible with data types specified in the tasks variable 
+                email: (u as any)["email"] ,
+                first_name: (u as any)["first_name"],
+                last_name: (u as any)["last_name"],
+                phone: (u as any)["phone"],
+                requirement_id: (u as any)["requirement_id"],
+                role: (u as any)["role"]
+                }
+               }); 
+               
+               setStakeholders(stakes);
             }
-            setUdata([udata]);
-        }
-        else
-          console.log("nothing retrieved 2 :(");
-      
+            else
+              console.log("nothing retrieved 3 :(");
+
+          
     }
 
     const handleFetchFlow = async (): Promise<void> => { 
@@ -162,13 +197,38 @@ const MainPage: React.FC = () => {
     useEffect(() => 
     {
       const fetch = async(): Promise<void>=>{
-        await handleFetchAll();  
+        await handleFetchAll(); 
       }
       if(uid === "")
         fetch();
     });
 
+    // Check user role when component mounts
     useEffect(() => {
+      
+      const fetch = async (): Promise<void> => {   
+        const roleCookie = await getCookie("role"); 
+        
+        if (uDatafromDb.length > 0 && requirements.length > 0) {
+          const user = uDatafromDb[0];
+          const requirement = requirements[0];
+    
+          
+          setIsAdmin(roleCookie?.value === "Admin");
+          setIsITSupport(roleCookie?.value === "IT");
+          
+          if (requirement.assigned_to_id === user.id && (roleCookie?.value === "Admin" || roleCookie?.value === "IT")) 
+            {
+            setIsAssignedToMe(true);
+          }
+        }
+        
+      }
+  
+      fetch();
+      }, [uDatafromDb,requirements]);
+
+    /*useEffect(() => {
       if (uDatafromDb.length > 0 && requirements.length > 0) {
         const user = uDatafromDb[0];
         const requirement = requirements[0];
@@ -180,7 +240,7 @@ const MainPage: React.FC = () => {
           }
         }
       }
-    }, [uDatafromDb, requirements]);
+    }, [uDatafromDb, requirements]);*/
 
     useEffect(() => 
       {
@@ -191,14 +251,13 @@ const MainPage: React.FC = () => {
           fetch();
       });
 
-      console.log(requirements)
   const handleRouter = () => {
     localStorage.clear();
     router.back();
   }
 
   const handleResolveRequirement = async () => {
-    if (!currUser || !isITSupport || !isAssignedToMe) return;
+    if (!currUser || !isITSupport || !isAssignedToMe || !isAdmin) return;
   
     const requirementId = localStorage.getItem("requirement_id");
     if (!requirementId || !resolutionDetails.trim()) {
@@ -238,10 +297,12 @@ const MainPage: React.FC = () => {
             Information Technology Investment Request (ITIR) Form
             </h2>
           </div>
-          
+          <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Reporter Information</h1> 
     {
+      
       uDatafromDb.map((u, index) => (
       <table
+      
               key=
               {index} style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
             >
@@ -249,13 +310,13 @@ const MainPage: React.FC = () => {
                 <tr>
                   <td
                     style={{
-                      padding: "40px",
+                      padding: "20px",
                       border: "1px solid #ccc",
-                      width: "300px", // First column takes less space
+                      width: "200px", // First column takes less space
                       fontWeight: "bold",
                     }}
                   >
-                    First Name, Last Name, Middle Initial
+                    First Name, Last Name
                   </td>
                   <td
                     style={{
@@ -334,7 +395,7 @@ const MainPage: React.FC = () => {
               </tbody>
               </table>
       ))}
-      <h2>Please fill out as many sections as you can.</h2>
+
       {requirements.map((u, index) => (
         
         <div key={index}>
@@ -376,14 +437,32 @@ const MainPage: React.FC = () => {
                 </tr>
               </tbody>
               </table>
+              <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Current Status</h1>
+              <table
+              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+            >
+              <tbody>
+                <tr>
+                  <td
+                    style={{
+                      padding: "10px",
+                      border: "1px solid #ccc",
+                      width: "100%",
+                    }}
+                  >
+                  {u.requirement_status}
+                  </td>
+                </tr>
+              </tbody>
+              </table>
               
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Is this request a new Business Process or Enhancement to an existing Process?</h1>
               <p>R/ {u.process_type}.</p>
 
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Do any workarounds exist currently?</h1>
-              {u.exist_workarounds === false && <p>R/ No.</p>}
-              {u.exist_workarounds === true && <p>R/ Yes.</p>}
-              {u.exist_workarounds !== true && u.exist_workarounds !== false && <p>R/ Not applicable.</p>}
+              {u.exist_workarounds === "No" && <p>R/ No.</p>}
+              {u.exist_workarounds === "Yes" && <p>R/ Yes.</p>}
+              {u.exist_workarounds !== "Yes" && u.exist_workarounds !== "No" && <p>R/ Not applicable.</p>}
       
               
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> If you have selected ‘Yes’ for the above question (Q2) then please describe workaround(s) in the box provided below:</h1>
@@ -462,6 +541,104 @@ const MainPage: React.FC = () => {
                 </tr>
               </tbody>
               </table>
+
+              <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> List Stakeholders</h1>
+              {stakesholders.map((k, index2) => (
+                <div key={index2}>
+              
+              <table
+              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+            >
+              <tbody>
+              <tr>
+                  <td
+                    style={{
+                      padding: "40px",
+                      border: "1px solid #ccc",
+                      width: "300px", // First column takes less space
+                      fontWeight: "bold",
+                    }}
+                  >
+                    First Name, Last Name
+                  </td>
+                  <td
+                    style={{
+                      padding: "10px",
+                      border: "1px solid #ccc",
+                      width: "100%",
+                    }}
+                  >
+                 {k.first_name} {k.last_name}
+                  </td>
+                </tr>
+                <tr>
+                <td
+                  style={{
+                    padding: "20px",
+                    border: "1px solid #ccc",
+                    width: "200px", // First column takes less space
+                    fontWeight: "bold",
+                  }}
+                >
+                  Role or Position
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "100%",
+                  }}
+                > 
+                  {k.role}
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style={{
+                    padding: "20px",
+                    border: "1px solid #ccc",
+                    width: "200px", // First column takes less space
+                    fontWeight: "bold",
+                  }}
+                >
+                  Phone Number
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "100%",
+                  }}
+                >
+                {k.phone}  
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style={{
+                    padding: "20px",
+                    border: "1px solid #ccc",
+                    width: "200px", // First column takes less space
+                    fontWeight: "bold",
+                  }}
+                >
+                  Email Address
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "100%",
+                  }}
+                >
+                  {k.email}
+                </td>
+                
+              </tr>
+              </tbody>
+              </table>
+              </div>
+              ))}
 
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Contact Information for the Business Administrator (Functional Unit Manager)</h1>
               <table
@@ -570,7 +747,7 @@ const MainPage: React.FC = () => {
                       width: "100%",
                     }}
                   >
-                  {u.communication_strategy}
+                  {u.contact_information}
                   </td>
                 </tr>
               </tbody>
@@ -623,7 +800,7 @@ const MainPage: React.FC = () => {
         }
       </div>
 
-      {isITSupport && isAssignedToMe && requirements[0]?.process_type !== "Resolved" && (
+      {(isAdmin || isITSupport) && isAssignedToMe && requirements[0]?.process_type !== "Resolved" && (
       <div className="mt-4">
         {updateSuccess !== null && (
           <div className={`mx-4 p-3 rounded ${updateSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>

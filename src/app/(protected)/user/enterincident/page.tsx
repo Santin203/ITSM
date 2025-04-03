@@ -1,17 +1,36 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getAllIncidents, getCurrUserData } from '../../../../hooks/db.js';
-import { DocumentData } from "firebase/firestore";
+import { getAllIncidents, getCurrUserData, addIncidents } from '../../../../hooks/db.js';
+import { DocumentData, Timestamp } from "firebase/firestore";
 
 export default function IncidentEntryPage() {
   const router = useRouter();
   const [incidentNumber, setIncidentNumber] = useState("");
+  const [incidentID, setIncidentID] = useState(0);
   const [reportedBy, setReportedBy] = useState("");
   const [reportedDateTime, setReportedDateTime] = useState("");
   const [organization, setOrganization] = useState("");
   const [department, setDepartment] = useState("");
   const [section, setSection] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [statuss, setStatus] = useState("");
+  const [user_id, setID] = useState("");
+  const [reportTS, setTimestamp] = useState<Timestamp>();
+  const [formData, setFormData] = useState({
+    title:"",
+    description:"",
+    incident_id:"",
+    incident_start_date:"",
+    business_impact:"",
+    incident_logged:"",
+    assigned_to_id:"",
+    root_cause:"",
+    stakeholder_details:"",
+    user_details:"",
+    incident_resolution_date:Timestamp.fromDate(new Date("10-01-1900:00")),
+    additional_details:""
+  });
 
   useEffect(() => {
     const fetchAndGenerateIncidentNumber = async () => {
@@ -38,12 +57,15 @@ export default function IncidentEntryPage() {
         const lastIncident = incidents[incidents.length - 1];
         const lastIncidentNumber = lastIncident.incident_id;
         setIncidentNumber(`INC-${lastIncidentNumber + 1}`);
+        setIncidentID(lastIncidentNumber+1);
       } else {
         setIncidentNumber("INC-1");
       }
       } catch (error) {
       console.error("Error fetching incidents:", error);
       setIncidentNumber("INC-1");
+      setIncidentID(1);
+
       }
     };
 
@@ -67,8 +89,6 @@ export default function IncidentEntryPage() {
       }
     };
 
-
-
     const fetchUserData = async () => {
       try {
       const userData = await getCurrUserData();
@@ -78,6 +98,8 @@ export default function IncidentEntryPage() {
         if (userData.name && userData.last_name_1 && userData.last_name_2) {
         setReportedBy(`${userData.name} ${userData.last_name_1} ${userData.last_name_2}`);
         }
+        if(userData.id)
+          setID(userData.id);
       }
       } catch (error) {
       console.error("Error fetching user data:", error);
@@ -89,74 +111,73 @@ export default function IncidentEntryPage() {
       hour12: false,
     }).replace(" ", "T").slice(0, 16); // Format as "YYYY-MM-DDTHH:mm"
     setReportedDateTime(currentDateTime);
+    setTimestamp(Timestamp.now());
 
     fetchAndGenerateIncidentNumber();
     fetchOrganizationDetails();
     fetchUserData();
   }, []);
 
+   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+          const { name, value } = e.target;
+          setFormData((prev) => ({ ...prev, [name]: value }));
+        };
+
+  const handleSubmit =  async (e: React.FormEvent) => {
+          e.preventDefault();
+
+          try{
+
+          const resoldate = new Date();
+          resoldate.setFullYear(1900);
+          resoldate.setMonth(1);
+          resoldate.setDate(1);
+
+          const response = await addIncidents({
+            additional_details: formData.additional_details,
+            business_impact: formData.business_impact,
+            department: department,
+            description: formData.description,
+            incident_id: incidentID,
+            incident_logged: formData.incident_logged,
+            incident_report_date: reportTS,
+            incident_resolution_date: Timestamp.fromDate(resoldate),
+            incident_start_date: Timestamp.fromDate(new Date(startDate)),
+            incident_status:statuss,
+            it_id: formData.assigned_to_id,
+            organization: organization,
+            reporter_id: user_id,
+            root_cause: formData.root_cause,
+            section:section,
+            title:formData.title,
+            user_details:formData.user_details
+          })
+          console.log(response)
+          if(response === 0)
+          {
+            console.log("Success")
+            alert("Incident Submitted!");
+            window.location.href = "/trackincidents";
+          }
+              
+          else
+            alert("An error occurred.");
+        }
+        catch{
+          alert("An error occurred.");
+        }
+      }
+      
+
   return (
+    <form onSubmit={handleSubmit}>
+      <fieldset>
     <div style={{ display: "flex", flexDirection: "column"}} className="text-black">
       {/* Main Content */}
       <div style={{ padding: "40px", fontFamily: "Arial, sans-serif" }}>
         <h2 style={{ fontSize: "20px", fontWeight: "bold", textAlign: "center" }}>
           Major Incident Report
         </h2>
-
-        {/* Organization Details */}
-        <table
-          style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
-        >
-          <tbody>
-            {["Organization", "Department", "Section"].map((label, index) => (
-              <tr key={index}>
-          <td
-            style={{
-              padding: "20px",
-              border: "1px solid #ccc",
-              width: "200px", // First column takes less space
-              fontWeight: "bold",
-            }}
-          >
-            {label}:
-          </td>
-          <td
-            style={{
-              padding: "10px",
-              border: "1px solid #ccc",
-              width: "100%",
-            }}
-          >
-            {label === "Organization" ? (
-              <input
-                type="text"
-                value={organization}
-                onChange={(e) => setOrganization(e.target.value)}
-                style={{ width: "100%" }}
-              />
-            ) : label === "Department" ? (
-              <input
-                type="text"
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                style={{ width: "100%" }}
-              />
-            ) : label === "Section" ? (
-              <input
-                type="text"
-                value={section}
-                onChange={(e) => setSection(e.target.value)}
-                style={{ width: "100%" }}
-              />
-            ) : (
-              <input type="text" style={{ width: "100%" }} />
-            )}
-          </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
         {/* Incident Ticket Number */}
         <div
           style={{
@@ -168,23 +189,107 @@ export default function IncidentEntryPage() {
           Incident Ticket No.: {incidentNumber}
         </div>
 
+        {/* Organization Details */}
+        <table
+          style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+        >
+          <tbody>
+          <tr>
+          <td
+            style={{
+              padding: "20px",
+              border: "1px solid #ccc",
+              width: "200px", // First column takes less space
+              fontWeight: "bold",
+            }}
+          >
+            Organization
+          </td>
+          <td
+            style={{
+              padding: "10px",
+              border: "1px solid #ccc",
+              width: "100%",
+            }}
+          >
+            <input
+                type="text"
+                id="organization"
+                name="organization"
+                value={organization}
+                className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                style={{ width: "100%" }}
+                readOnly
+              />
+          </td>
+          </tr>
+          <tr>
+          <td
+            style={{
+              padding: "20px",
+              border: "1px solid #ccc",
+              width: "200px", // First column takes less space
+              fontWeight: "bold",
+            }}
+          >
+            Department
+          </td>
+          <td
+            style={{
+              padding: "10px",
+              border: "1px solid #ccc",
+              width: "100%",
+            }}
+          >
+            <input
+                type="text"
+                id="department"
+                name="department"
+                value={department}
+                className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                style={{ width: "100%" }}
+                readOnly
+              />
+          </td>
+          </tr>
+          <tr>
+          <td
+            style={{
+              padding: "20px",
+              border: "1px solid #ccc",
+              width: "200px", // First column takes less space
+              fontWeight: "bold",
+            }}
+          >
+            Section
+          </td>
+          <td
+            style={{
+              padding: "10px",
+              border: "1px solid #ccc",
+              width: "100%",
+            }}
+          >
+            <input
+                type="text"
+                id="section"
+                name="section"
+                value={section}
+                className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                style={{ width: "100%" }}
+                readOnly
+              />
+          </td>
+          </tr>
+          </tbody>
+        </table>
         {/* Incident Details */}
         <h3 style={{ marginTop: "20px", fontWeight: "bold" }}>Incident Details</h3>
         <table
           style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}
         >
           <tbody>
-            {[
-              "User Details",
-              "Reported By",
-              "Incident Description",
-              "Business Impact",
-              "Root Cause",
-              "Incident Status",
-              "How was the incident logged?",
-              "Incident Manager",
-            ].map((label, index) => (
-              <tr key={index}>
+              <tr>
                 <td
                   style={{
                     padding: "20px",
@@ -194,7 +299,7 @@ export default function IncidentEntryPage() {
                     whiteSpace: "nowrap", // Prevent wrapping
                   }}
                 >
-                  {label}:
+                  User Details
                 </td>
                 <td
                   style={{
@@ -203,19 +308,268 @@ export default function IncidentEntryPage() {
                     width: "100%",
                   }}
                 >
-                  {label === "Reported By" ? (
-                    <input
-                      type="text"
-                      value={reportedBy}
-                      readOnly
-                      style={{ width: "100%" }}
-                    />
-                  ) : (
-                    <input type="text" style={{ width: "100%" }} />
-                  )}
+                <input
+                type="text"
+                id="user_details"
+                name="user_details"
+                onChange={handleChange}
+                value={formData.user_details}
+                className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                style={{ width: "100%" }}
+              />
                 </td>
               </tr>
-            ))}
+              <tr>
+                <td
+                  style={{
+                    padding: "20px",
+                    border: "1px solid #ccc",
+                    width: "250px",  // Increase the width
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap", // Prevent wrapping
+                  }}
+                >
+                  Reported By
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "100%",
+                  }}
+                >
+                  <input
+                  type="text"
+                  id="reported_by"
+                  name="reported_by"
+                  value={reportedBy}
+                  className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                  style={{ width: "100%" }}
+                  readOnly
+                />
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style={{
+                    padding: "20px",
+                    border: "1px solid #ccc",
+                    width: "250px",  // Increase the width
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap", // Prevent wrapping
+                  }}
+                >
+                  Incident Title
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "100%",
+                  }}
+                >
+                  <input
+                  type="text"
+                  id="title"
+                  name="title"
+                  onChange={handleChange}
+                  value={formData.title}
+                  className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                  style={{ width: "100%" }}
+                  required
+                />
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style={{
+                    padding: "20px",
+                    border: "1px solid #ccc",
+                    width: "250px",  // Increase the width
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap", // Prevent wrapping
+                  }}
+                >
+                  Incident Description
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "100%",
+                  }}
+                >
+                  <input
+                  type="text"
+                  id="description"
+                  name="description"
+                  onChange={handleChange}
+                  value={formData.description}
+                  className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                  style={{ width: "100%" }}
+                  required
+                />
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style={{
+                    padding: "20px",
+                    border: "1px solid #ccc",
+                    width: "250px",  // Increase the width
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap", // Prevent wrapping
+                  }}
+                >
+                  Business Impact
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "100%",
+                  }}
+                >
+                  <input
+                  type="text"
+                  id="business_impact"
+                  name="business_impact"
+                  onChange={handleChange}
+                  value={formData.business_impact}
+                  className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                  style={{ width: "100%" }}
+                  required
+                />
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style={{
+                    padding: "20px",
+                    border: "1px solid #ccc",
+                    width: "250px",  // Increase the width
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap", // Prevent wrapping
+                  }}
+                >
+                  Root Cause
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "100%",
+                  }}
+                >
+                  <input
+                  type="text"
+                  id="root_cause"
+                  name="root_cause"
+                  onChange={handleChange}
+                  value={formData.root_cause}
+                  className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                  style={{ width: "100%" }}
+                  required
+                />
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style={{
+                    padding: "20px",
+                    border: "1px solid #ccc",
+                    width: "250px",  // Increase the width
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap", // Prevent wrapping
+                  }}
+                >
+                  Incident Status
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "100%",
+                  }}
+                >
+                  <select
+                    id="incident_status"
+                    name="incident_status"
+                    required
+                    value={statuss}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="dark:text-black border rounded px-3 py-2 mb-4 w-full"
+                  >
+                    <option value="" disabled>Select Status</option>
+                    <option defaultChecked value ="Sent">Sent</option>
+                    <option value="Assigned">Assigned</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Escalated">Escalated</option>
+                    <option value="Resolved">Resolved</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style={{
+                    padding: "20px",
+                    border: "1px solid #ccc",
+                    width: "250px",  // Increase the width
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap", // Prevent wrapping
+                  }}
+                >
+                  How was the incident logged?
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "100%",
+                  }}
+                >
+                  <input
+                  type="text"
+                  id="incident_logged"
+                  name="incident_logged"
+                  onChange={handleChange}
+                  value={formData.incident_logged}
+                  className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                  style={{ width: "100%" }}
+                />
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style={{
+                    padding: "20px",
+                    border: "1px solid #ccc",
+                    width: "250px",  // Increase the width
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap", // Prevent wrapping
+                  }}
+                >
+                  Incident Manager/IT
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "100%",
+                  }}
+                >
+                  <input
+                  type="number"
+                  id="it_id"
+                  name="it_id"
+                  onChange={handleChange}
+                  value={formData.assigned_to_id}
+                  className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                  style={{ width: "100%" }}
+                  
+                />
+                </td>
+              </tr>
           </tbody>
         </table>
 
@@ -227,12 +581,7 @@ export default function IncidentEntryPage() {
           style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}
         >
           <tbody>
-            {[
-              "Incident Start Date and Time",
-              "Incident Reported Date and Time",
-              "Incident Resolution Date and Time",
-            ].map((label, index) => (
-              <tr key={index}>
+            <tr>
                 <td
                   style={{
                     padding: "10px",
@@ -242,7 +591,7 @@ export default function IncidentEntryPage() {
                     whiteSpace: "nowrap", // Prevent wrapping
                   }}
                 >
-                  {label}:
+                  Incident Start Date and Time
                 </td>
                 <td
                   style={{
@@ -251,50 +600,100 @@ export default function IncidentEntryPage() {
                     width: "100%",
                   }}
                 >
-                  {label === "Incident Reported Date and Time" ? (
-                    <input
+                  <input
+                      id = "incident_start_date"
+                      type="date"
+                      style={{ width: "100%" }}
+                      value={startDate}
+                      onChange={(e)=>setStartDate(e.target.value)}
+                      required
+                    />
+                </td>
+            </tr>
+            <tr>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "250px",  // Increase the width
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap", // Prevent wrapping
+                  }}
+                >
+                  Incident Reported Date and Time
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "100%",
+                  }}
+                >
+                  <input
+                      id = "incident_reported_date"
                       type="datetime-local"
                       style={{ width: "100%" }}
-                      value={label === "Incident Reported Date and Time" ? reportedDateTime : undefined}
-                      readOnly={label === "Incident Reported Date and Time"}
+                      value={reportedDateTime}
+                      readOnly
                     />
-                  ) : (
-                    <input type="datetime-local" style={{ width: "100%" }} />
-                  )}
-                  
                 </td>
               </tr>
-            ))}
+              <tr>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "250px",  // Increase the width
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap", // Prevent wrapping
+                  }}
+                >
+                  Incident Resolution Date and Time
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "100%",
+                  }}
+                >
+                  <input
+                      id = "incident_resolution_date"
+                      type="text"
+                      style={{ width: "100%" }}
+                      value="N/A"
+                      readOnly
+                    />
+                </td>
+              </tr>
           </tbody>
         </table>
 
         {/* Incident Details Description */}
+        
         <h3 style={{ marginTop: "20px", fontWeight: "bold" }}>Incident Details</h3>
-        <textarea
-          style={{
-            width: "100%",
-            height: "100px",
-            padding: "10px",
-            border: "1px solid #ccc",
-          }}
-          placeholder="Enter incident details..."
-        ></textarea>
-
-        {/* Submit Button */}
-        <button
-          style={{
-            marginTop: "20px",
-            background: "#4F46E5",
-            color: "white",
-            padding: "10px 20px",
-            borderRadius: "6px",
-            fontSize: "16px",
-            cursor: "pointer",
-          }}
-        >
-          Submit
-        </button>
+        <input
+                  type="text"
+                  id="additional_details"
+                  name="additional_details"
+                  onChange={handleChange}
+                  value={formData.additional_details}
+                  className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                  style={{
+                    width: "100%",
+                    height: "200px",
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                  }}
+                />
+        <input
+              type="submit"
+              value="Submit"
+              className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
+            />
       </div>
     </div>
+    </fieldset>
+    </form>
   );
 }
