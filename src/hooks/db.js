@@ -298,6 +298,150 @@ export async function updateIncidentStatus(incidentId, newStatus, resolutionDeta
     return 1; // Error
   }
 }
+
+// Function to update incident state 
+export async function updateIncidentState(incidentId, newState, updatedBy) {
+  try {
+    const batch = writeBatch(db);
+    
+    // Find the incident document
+    const incidentsRef = collection(db, "Incidents");
+    const q = query(incidentsRef, where("incident_id", "==", Number(incidentId)));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      console.error("No incident found with ID:", incidentId);
+      return false;
+    }
+    
+    // Get the document reference and update it
+    const incidentDoc = querySnapshot.docs[0];
+    const incidentRef = doc(db, "Incidents", incidentDoc.id);
+    
+    batch.update(incidentRef, {
+      incident_status: newState,
+      last_updated_by: String(updatedBy),
+      last_updated_at: new Date()
+    });
+    
+    // Add a workflow entry documenting the state change
+    const workflowRef = doc(collection(db, "Workflow"));
+    batch.set(workflowRef, {
+      incident_id: Number(incidentId),
+      description: `State changed to ${newState}`,
+      reporter_id: Number(updatedBy),
+      time_of_incident: new Date(),
+      incident_status: newState,
+      order: Date.now() // Simple ordering mechanism
+    });
+    
+    // Commit the batch
+    await batch.commit();
+    return true;
+  } catch (error) {
+    console.error("Error updating incident state:", error);
+    return false;
+  }
+}
+
+// Function to get all groups (added from new version)
+export async function getAllGroups() {
+  try {
+    const groupsCol = collection(db, "Groups");
+    const groupsSnapshot = await getDocs(groupsCol);
+    const groupsData = groupsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      isGroup: true
+    }));
+    return groupsData;
+  } catch (error) {
+    console.error("Error fetching groups:", error);
+    return [];
+  }
+}
+
+// Function to escalate incident to a user
+export async function escalateIncident(incidentId, targetId, comment, updatedBy) {
+  try {
+    const batch = writeBatch(db);
+    
+    // Find the incident document
+    const incidentsRef = collection(db, "Incidents");
+    const q = query(incidentsRef, where("incident_id", "==", Number(incidentId)));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      console.error("No incident found with ID:", incidentId);
+      return false;
+    }
+    
+    // Get the document reference
+    const incidentDoc = querySnapshot.docs[0];
+    const incidentRef = doc(db, "Incidents", incidentDoc.id);
+    
+    // Update the incident document - now using assigned_to_id (a number)
+    batch.update(incidentRef, {
+      assigned_to_id: Number(targetId), // Update assigned_to_id as a number
+      incident_status: "Escalated",
+      last_updated_by: String(updatedBy),
+      last_updated_at: new Date(),
+      escalation_comment: comment
+    });
+    
+    // Add a workflow entry documenting the escalation
+    const workflowRef = doc(collection(db, "Workflow"));
+    batch.set(workflowRef, {
+      incident_id: Number(incidentId),
+      description: `Escalated to User: ${targetId}: ${comment}`,
+      reporter_id: Number(updatedBy),
+      time_of_incident: new Date(),
+      incident_status: "Escalated",
+      order: Date.now(), // Simple ordering mechanism
+      manager_id: Number(updatedBy)
+    });
+    
+    // Commit the batch
+    await batch.commit();
+    return true;
+  } catch (error) {
+    console.error("Error escalating incident:", error);
+    return false;
+  }
+}
+
+// Function to get incidents assigned to current user
+export async function getAssignedIncidents() {
+  const currUser = auth.currentUser;
+  if (currUser) {
+    try {
+      // Get user data to find user ID
+      const docRef = doc(db, "Users", currUser.uid);
+      const docSnap = await getDoc(docRef);
+      const userData = docSnap.data();
+      
+      if (!userData) {
+        console.error("No user data found");
+        return [];
+      }
+      
+      const userId = String(userData.id);
+      
+      // Query incidents where the user is in the assigned_to array
+      const incidentsRef = collection(db, "Incidents");
+      const q = query(incidentsRef, where("assigned_to", "array-contains", userId));
+      const querySnapshot = await getDocs(q);
+      
+      const incidentsData = querySnapshot.docs.map(doc => [doc.data(), doc.id]);
+      return incidentsData;
+    } catch (error) {
+      console.error("Error getting assigned incidents:", error);
+      return [];
+    }
+  }
+  return [];
+}
+
 export async function getRequirementFlowithId(i_id)
 {
   const incidentsRef = collection(db, "Requirement_Workflow");
