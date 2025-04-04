@@ -285,7 +285,7 @@ export async function updateIncidentStatus(incidentId, newStatus, resolutionDeta
           order: maxOrder + 1,
           reporter_id: Number(userData.id),
           time_of_incident: currentTime,
-          manager_id: Number(incidentData.it_id)
+          manager_id: Number(incidentData.assigned_to_id)
         });
       }
     }
@@ -460,7 +460,7 @@ export async function escalateRequirement(requirementId, targetId, comment, upda
       brief_description: `Requirement escalated to ${targetName} with the following comment: ${comment}`,
       submitter_id: Number(updatedBy),
       time_of_update: currentTime,
-      process_type: "Escalated",
+      requirement_status: "Escalated",
       order: Date.now(), // Simple ordering mechanism
       manager_id: Number(updatedBy)
     });
@@ -670,12 +670,12 @@ export async function updateRequirementStatus(requirementId, newStatus, resoluti
     const docRef = doc(db, "Requirements", requirementDocId);
     if (newStatus === "Resolved") {
       batch.update(docRef, {
-        process_type: newStatus,
+        requirement_status: newStatus,
         resolution_date: currentTime,
         resolution_details: resolutionDetails || ''
       });
     } else {
-      batch.update(docRef, { process_type: newStatus });
+      batch.update(docRef, { requirement_status: newStatus });
     }
 
     const workflowRef = collection(db, "Requirement_Workflow");
@@ -710,7 +710,7 @@ export async function updateRequirementStatus(requirementId, newStatus, resoluti
         batch.set(newWorkflowRef, {
           brief_description: description,
           requirement_id: Number(requirementId),
-          process_type: newStatus,
+          requirement_status: newStatus,
           order: maxOrder + 1,
           submitter_id: Number(userData.id),
           time_of_update: currentTime,
@@ -720,10 +720,10 @@ export async function updateRequirementStatus(requirementId, newStatus, resoluti
     }
 
     await batch.commit();
-    return 1;
+    return 0;
   } catch (error) {
     console.error("Error updating requirement status:", error);
-    return 0;
+    return 1;
   }
 }
 
@@ -751,7 +751,7 @@ export async function addIncidents(i) {
   incident_resolution_date: i.incident_resolution_date,
   incident_start_date: i.incident_start_date,
   incident_status:i.incident_status,
-  it_id: i.it_id,
+  assigned_to_id: i.assigned_to_id,
   organization: i.organization,
   reporter_id:i.reporter_id,
   root_cause: i.root_cause,

@@ -221,7 +221,7 @@ useEffect(() => {
           setSelectedState(tasks[0].incident_status || "");
         }
         const subs = await getUserDatawithId(Number((tasks as any)[0]["assigned_to_id"]));
-        if(subs)
+        if(subs && subs.length > 0)
         {
           console.log(subs)
           const user = subs.map((u) => {
@@ -351,6 +351,7 @@ useEffect(() => {
   
         // Also update the workflow manager_id
         const itId = incidents[0]?.assigned_to_id;
+        
         if (itId) {
           await updateWorkflowManager(incidentId, itId);
         }

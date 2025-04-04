@@ -74,16 +74,16 @@ export default function IncidentEntryPage() {
 
           const lastIncident = requirements[requirements.length - 1];
           const lastIncidentNumber = lastIncident.requirement_id;
-          setIncidentNumber(`INC-${lastIncidentNumber + 1}`);
+          setIncidentNumber(`REQ-${lastIncidentNumber + 1}`);
           setRequirementNumber(lastIncidentNumber+1);
           
         } else {
-          setIncidentNumber("INC-1");
+          setIncidentNumber("REQ-1");
           setRequirementNumber(1);
         }
       } catch (error) {
       console.error("Error fetching incidents:", error);
-      setIncidentNumber("INC-1");
+      setIncidentNumber("REQ-1");
       setRequirementNumber(1);
 
       }

@@ -9,6 +9,7 @@ type Requirement = {
   requirementType?:string, 
   assigned_to_id?:number 
   requirement_status:string
+  process_type:string
 }[];
 
 type Order = {
@@ -16,6 +17,7 @@ type Order = {
   requirement_submit_date:number,
   requirement_id:number
   requirement_status:number
+  process_type:number
 };  
 
 
@@ -23,10 +25,11 @@ const MainPage: React.FC = () => {
 
   const [uid, setUid] = useState("");
   const [requirements, setRequirements] = useState<Requirement>([]);
-  const [order, setOrder] = useState<Order>({requirement_id: 0, requirement_submit_date: 0, requirement_status: 0, submitter_id: 0 });
+  const [order, setOrder] = useState<Order>({requirement_id: 0, requirement_submit_date: 0, requirement_status: 0, submitter_id: 0, process_type: 0});
   const [date, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [status, setStatus] = useState("");
+  const [process_type, setProcessType] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [isITSupport, setIsITSupport] = useState(false);
   const [requirementTypeFilter, setRequirementTypeFilter] = useState("all"); // "all", "sent", "received"
@@ -59,7 +62,8 @@ const MainPage: React.FC = () => {
             + ((u as any)[0]["requirement_submit_date"].toDate().getDate()).toString().padStart(2, "0"),
             requirement_status: (u as any)[0]["requirement_status"],
             docId: (u as any)[1],
-            requirementType: (u as any)[0]["requirementType"] // Preserve the requirementType
+            requirementType: (u as any)[0]["requirementType"], // Preserve the requirementType
+            process_type: (u as any)[0]["process_type"]
           };
         });
         setRequirements(tasks);
@@ -81,7 +85,8 @@ const MainPage: React.FC = () => {
             + ((u as any)[0]["requirement_submit_date"].toDate().getDate()).toString().padStart(2, "0"),
             requirement_status: (u as any)[0]["requirement_status"],
             docId: (u as any)[1],
-            requirementType: "sent" // Since this is the current user's data, it's always "sent"
+            requirementType: "sent", // Since this is the current user's data, it's always "sent"
+            process_type: (u as any)[0]["process_type"]
           }
         }); 
         setRequirements(tasks);
@@ -103,14 +108,8 @@ const MainPage: React.FC = () => {
     if (uid === "") {
       fetch();
     }
-  }, [roleChecked, uid]);
+  });
 
- 
-  useEffect(() => {
-    if (roleChecked && uid !== "") {
-      handleFetchAll();
-    }
-  }, [isAdmin, isITSupport]);
 
   const compareDates = (d1:string, d2:string, d3:string) => {
     return(d1 <= d2 && d2 <= d3);
@@ -125,12 +124,15 @@ const MainPage: React.FC = () => {
     }
     
     // Filter by status
-    const matchesStatus = status === "" || String(u.requirement_status) === String(status);
+    const matchesStatus = status === "" || String(u.requirement_status) === String(status);status
+
+    // Filter by process type
+    const matchesProcessType = process_type === "" || String(u.process_type) === String(process_type);process_type
     
     // Filter by date range
     const matchesDate = date === "" && endDate === "" || compareDates(date, u.requirement_submit_date, endDate);
     
-    return matchesStatus && matchesDate;
+    return matchesStatus && matchesDate && matchesProcessType;
   });
   
 
@@ -155,7 +157,7 @@ const MainPage: React.FC = () => {
   // Alternar orden y resetear las demás columnas
   const handleSort = (col: keyof Order) => {
     setOrder((o) => {
-      const newOrder: Order = { requirement_id: 0, requirement_submit_date: 0, requirement_status: 0, submitter_id: 0 };
+      const newOrder: Order = { requirement_id: 0, requirement_submit_date: 0, requirement_status: 0, submitter_id: 0, process_type: 0 };
       if(o[col] >= 0)
         newOrder[col] = -1;
       else
@@ -232,17 +234,36 @@ const MainPage: React.FC = () => {
               )}
               
               <div>
-              <label htmlFor="incident_status" className="block mb-2">
+
+              <label htmlFor="requirement_process" className="block mb-2">
               <p className="text-black mt-2">Search for Requirement Process</p>
+              </label>
+                <select
+                  className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                  value={process_type}
+                  onChange={(e) => setProcessType(e.target.value)}
+                >
+                  <option defaultChecked value="">Not sure</option>
+                  <option value="New">New</option>
+                  <option value="Enhanced">Enhanced</option>
+                </select>
+              </div>
+
+              <div>
+              <label htmlFor="requirement_status" className="block mb-2">
+              <p className="text-black mt-2">Search for Requirement Status:</p>
               </label>
                 <select
                   className="text-black border rounded px-4 py-2 mb-4 w-medium"
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
                 >
-                  <option defaultChecked value="">Not sure</option>
-                  <option value="New">New</option>
-                  <option value="Enhanced">Enhanced</option>
+                  <option defaultChecked value="">All</option>
+                  <option value="Sent">Sent</option>
+                  <option value="Assigned">Assigned</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Escalated">Escalated</option>
+                  <option value="Resolved">Resolved</option>
                 </select>
               </div>
             
@@ -293,6 +314,13 @@ const MainPage: React.FC = () => {
                             <span>{order["requirement_status"] >= 0 ? '>' : '<'}</span>
                             </button>
               </th>
+              <th className="px-4 py-2 text-left">Process Type<button
+                            onClick={() => handleSort("process_type")}
+                            className="px-4 py-2 text-left"
+                            >
+                            <span>{order["requirement_status"] >= 0 ? '>' : '<'}</span>
+                            </button>
+              </th>
               <th className="px-4 py-2 text-left">Submitter ID</th>
               <th className="px-4 py-2 text-left">Actions</th>
             </tr>
@@ -310,6 +338,7 @@ const MainPage: React.FC = () => {
                   <td className="px-4 py-2">{u.requirement_id}</td>
                   <td className="px-4 py-2">{String(u.requirement_submit_date)}</td>
                   <td className="px-4 py-2">{u.requirement_status}</td>
+                  <td className="px-4 py-2">{u.process_type}</td>
                   <td className="px-4 py-2">{u.submitter_id}</td>
                   <td className="px-4 py-2">
                     <button
