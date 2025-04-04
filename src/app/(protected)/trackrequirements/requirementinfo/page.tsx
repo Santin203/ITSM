@@ -604,7 +604,7 @@ const MainPage: React.FC = () => {
                 className={`py-2 px-4 ${activeTab === 'escalate' ? 'border-b-2 border-blue-600 font-medium' : 'text-gray-500'}`}
                 onClick={() => setActiveTab('escalate')}
               >
-                Escalate Incident
+                Escalate Requirement
               </button>
             </div>
             
@@ -642,7 +642,7 @@ const MainPage: React.FC = () => {
                 {/* Success message */}
                 {stateChangeSuccess && (
                   <div className="mt-3 p-2 bg-green-100 text-green-700 rounded-md">
-                    Incident state successfully updated!
+                    Requirement state successfully updated!
                   </div>
                 )}
               </div>
