@@ -410,6 +410,70 @@ export async function escalateIncident(incidentId, targetId, comment, updatedBy)
   }
 }
 
+// Function to escalate requirement to a user
+export async function escalateRequirement(requirementId, targetId, comment, updatedBy) {
+  try {
+    const batch = writeBatch(db);
+    
+    // Find the requirement document
+    const requirementsRef = collection(db, "Requirements");
+    const q = query(requirementsRef, where("requirement_id", "==", Number(requirementId)));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      console.error("No requirement found with ID:", requirementId);
+      return false;
+    }
+    
+    // Get the document reference
+    const requirementDoc = querySnapshot.docs[0];
+    const requirementRef = doc(db, "Requirements", requirementDoc.id);
+    const currentTime = new Date();
+
+    //Get name from the targetId
+    const usersRef = collection(db, "Users");
+    const userQuery = query(usersRef, where("id", "==", Number(targetId)));
+    const userSnapshot = await getDocs(userQuery);
+
+    let targetName = "Unknown User";
+    if (!userSnapshot.empty) {
+      const userDoc = userSnapshot.docs[0];
+      const userData = userDoc.data();
+      targetName = `${userData.name} ${userData.last_name_1}`;
+    }
+
+
+    
+    // Update the requirement document
+    batch.update(requirementRef, {
+      assigned_to_id: Number(targetId), // Update assigned_to_id as a number
+      requirement_status: "Escalated",
+      last_updated_by: String(updatedBy),
+      last_updated_at: new Date(),
+      escalation_comment: comment
+    });
+    
+    // Add a workflow entry documenting the escalation
+    const workflowRef = doc(collection(db, "Requirement_Workflow"));
+    batch.set(workflowRef, {
+      requirement_id: Number(requirementId),
+      brief_description: `Requirement escalated to ${targetName} with the following comment: ${comment}`,
+      submitter_id: Number(updatedBy),
+      time_of_update: currentTime,
+      process_type: "Escalated",
+      order: Date.now(), // Simple ordering mechanism
+      manager_id: Number(updatedBy)
+    });
+    
+    // Commit the batch
+    await batch.commit();
+    return true;
+  } catch (error) {
+    console.error("Error escalating requirement:", error);
+    return false;
+  }
+}
+
 // Function to get incidents assigned to current user
 export async function getAssignedIncidents() {
   const currUser = auth.currentUser;
@@ -595,7 +659,7 @@ export async function updateRequirementStatus(requirementId, newStatus, resoluti
 
     if (requirementSnapshot.empty) {
       console.error("No requirement found with ID:", requirementId);
-      return 1;
+      return 0;
     }
 
     const requirementDoc = requirementSnapshot.docs[0];
@@ -656,10 +720,10 @@ export async function updateRequirementStatus(requirementId, newStatus, resoluti
     }
 
     await batch.commit();
-    return 0;
+    return 1;
   } catch (error) {
     console.error("Error updating requirement status:", error);
-    return 1;
+    return 0;
   }
 }
 

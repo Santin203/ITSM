@@ -3,9 +3,8 @@ import React from 'react';
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getCookie } from '../../../../hooks/cookies';
-import { getRequirementwithId, getRequirementFlowithId, getCurrUserData, getStakeholderswithId, getUserDatawithId} from '../../../../hooks/db.js'
+import { getRequirementwithId, getRequirementFlowithId, getCurrUserData, getStakeholderswithId, getUserDatawithId, escalateRequirement, getUsersDataDic } from '../../../../hooks/db.js'
 import { auth } from '../../../../firebaseConfig.js';
-import { userInfo } from 'os';
 import { updateRequirementStatus } from '../../../../hooks/db.js'
 
 type User = {
@@ -49,7 +48,7 @@ type Workflow = {
   order:number,
   submitter_id:number,
   time_of_update:string,
-  manager_id:number
+  manager_id:number,
 }[];  
 
 type Stakeholder = {
@@ -60,6 +59,14 @@ type Stakeholder = {
   requirement_id:number,
   role:string
 }[];
+
+const REQUIREMENT_STATES = [
+  "Sent",
+  "Assigned",
+  "Solving",
+  "Escalated",
+  "Resolved"
+];
 
 const MainPage: React.FC = () => {
 
@@ -74,11 +81,24 @@ const MainPage: React.FC = () => {
   const [isITSupport, setIsITSupport] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   // Added for resolution functionality:
+  const [isRoleChecked, setIsRoleChecked] = useState(false);
   const [isAssignedToMe, setIsAssignedToMe] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateSuccess, setUpdateSuccess] = useState<boolean | null>(null);
   const [resolutionDetails, setResolutionDetails] = useState("");
   const [showResolutionForm, setShowResolutionForm] = useState(false);
+
+  // State for escalation & state management 
+  const [activeTab, setActiveTab] = useState<string>("state");
+  const [selectedEscalationUser, setSelectedEscalationUser] = useState<any>(null); //
+  const [escalationComment, setEscalationComment] = useState("");
+  const [isEscalating, setIsEscalating] = useState(false); //
+  const [escalationSuccess, setEscalationSuccess] = useState(false);
+  const [isGroupSelected, setIsGroupSelected] = useState(false);
+  const [escalationTargets, setEscalationTargets] = useState<any[]>([]); //track the selected escalation target
+  const [selectedState, setSelectedState] = useState<string>(""); //Scalation commentss
+  const [isChangingState, setIsChangingState] = useState(false);
+  const [stateChangeSuccess, setStateChangeSuccess] = useState(false);
   
     useEffect(() => {
       const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -89,7 +109,82 @@ const MainPage: React.FC = () => {
       return () => unsubscribe(); // Cleanup the listener
     }, []);
  
-  
+    // Check if user is IT support and if the incident is assigned to them
+    useEffect(() => {
+      const checkUserRole = async () => {
+        try {
+          if (currUser) {
+            const userData = await getCurrUserData();
+            const roleCookie = await getCookie("role");
+            if (userData && userData[0] && roleCookie?.value === "IT") {
+              setIsITSupport(true);
+              
+              // Check if the current requirement is assigned to this IT user
+              if (requirements.length > 0) {
+                const requirement = requirements[0];
+                if (requirement.assigned_to_id === userData[0].id) {
+                  setIsAssignedToMe(true);
+                }
+              }
+            }
+          }
+        } catch (error) {
+            console.error("Error fetching user data:", error);
+          } finally {
+            setIsRoleChecked(true);
+          }
+      };
+
+      if (!isRoleChecked && requirements.length > 0) {
+        checkUserRole();
+      }
+    }, [currUser, requirements, isRoleChecked]);
+
+    useEffect(() => {
+      const fetchEscalationTargets = async () => {
+        if (!isITSupport) return;
+        
+        try {
+          // Get current user's data to identify and exclude them
+          const currentUserData = await getCurrUserData();
+          const currentUserId = currentUserData?.id;
+          
+          // Fetch all users from Firebase
+          const allUsers = await getUsersDataDic();
+          const usersList = allUsers
+            .map((userTuple: any) => {
+              const userData = userTuple[0];
+              // Create a full name using available name fields
+              const firstName = userData.name || '';
+              const lastName1 = userData.last_name_1 || '';
+              
+              // Format name as "First Last" 
+              let displayName = firstName;
+              if (lastName1) displayName += ' ' + lastName1;
+              
+              // If no name is available, use ID as fallback
+              if (!displayName.trim()) displayName = `User ${userData.id}`;
+              
+              return {
+                id: userData.id,
+                displayName: displayName,
+                email: userData.email || ''
+              };
+            })
+            // Filter out the current user
+            .filter(user => user.id !== currentUserId);
+          
+          setEscalationTargets(usersList);
+        } catch (error) {
+          console.error("Error fetching escalation targets:", error);
+        }
+      };
+      
+      fetchEscalationTargets();
+    }, [isITSupport]);
+
+
+
   const handleFetchAll = async (): Promise<void> => { 
       const requirementsData = await getRequirementwithId(Number(localStorage.getItem("requirement_id")));
       if(requirementsData)
@@ -179,9 +274,11 @@ const MainPage: React.FC = () => {
             brief_description: (u as any)["brief_description"],
             submitter_id: (u as any)["submitter_id"],
             requirement_id: (u as any)["requirement_id"],
-            time_of_update: ((u as any)["time_of_update"].toDate().getFullYear()).toString()+'-'
-            +((u as any)["time_of_update"].toDate().getMonth()+1).toString().padStart(2, "0") + '-'
-            + ((u as any)["time_of_update"].toDate().getDate()).toString().padStart(2, "0"),
+            time_of_update: (u as any)["time_of_update"] && typeof (u as any)["time_of_update"].toDate === 'function'
+              ? ((u as any)["time_of_update"].toDate().getFullYear()).toString() + '-'
+                + ((u as any)["time_of_update"].toDate().getMonth() + 1).toString().padStart(2, "0") + '-'
+                + ((u as any)["time_of_update"].toDate().getDate()).toString().padStart(2, "0")
+              : "Invalid Date",
             process_type: (u as any)["process_type"],
             order: (u as any)["order"],
             manager_id: (u as any)["manager_id"]
@@ -289,6 +386,198 @@ const MainPage: React.FC = () => {
     }
   };
 
+  // Handle escalation selection change
+    const handleEscalationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const targetValue = e.target.value;
+    const userId = parseInt(targetValue);
+    setSelectedEscalationUser(userId);
+  };
+    
+  // Handle escalation comment change
+  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEscalationComment(e.target.value);
+  };
+  
+  // Handle state change
+  const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedState(e.target.value);
+  };
+
+  // Handle state change submission
+    const handleChangeState = async () => {
+      if (!selectedState) {
+        alert("Please select a state.");
+        return;
+      }
+      
+      setIsChangingState(true);
+      
+      try {
+        // Get current user ID
+        let currentUserId;
+        if (currUser) {
+          // If we have a current user, use their data
+          const userData = await getUsersDataDic();
+          const currentUserData = userData.find((u: any) => 
+            u[1] === currUser.uid
+          );
+          
+          if (currentUserData && currentUserData[0] && 
+              typeof currentUserData[0] === 'object' && 
+              'id' in currentUserData[0]) {
+            currentUserId = currentUserData[0].id;
+          } else {
+            // Fallback to user UID
+            currentUserId = currUser.uid;
+          }
+        } else {
+          // Fallback to a default ID
+          currentUserId = requirements[0]?.submitter_id || 1;
+        }
+        
+        // Get incident ID
+        const incidentId = requirements[0]?.requirement_id;
+        
+        if (!incidentId) {
+          throw new Error("No requirement ID found");
+        }
+        
+        console.log("Updating requirement state:", {
+          incidentId,
+          newState: selectedState,
+          updatedBy: currentUserId
+        });
+        
+        // Call the Firebase function to update the state
+        const success = await updateRequirementStatus(
+          incidentId,
+          selectedState,
+          currentUserId
+        ).catch((error) => {
+          console.error("Error in updateRequirementStatus:", error);
+          return false; // Ensure a falsy value is returned on failure
+        });
+        
+        if (success) {
+          setIsChangingState(false);
+          setStateChangeSuccess(true);
+          
+          // Update local incident state for UI feedback
+          if (requirements.length > 0) {
+            const updatedIncidents = [...requirements];
+            updatedIncidents[0].requirement_status = selectedState;
+            setRequirements(updatedIncidents);
+          }
+          
+          // Refresh workflow data to show new entry
+          await handleFetchFlow();
+          
+          // Reset success message after 3 seconds
+          setTimeout(() => {
+            setStateChangeSuccess(false);
+          }, 5000);
+        } else {
+          throw new Error("Failed to update requirement state");
+        }
+      } catch (error) {
+        console.error("Error changing state:", error);
+        setIsChangingState(false);
+        alert("Failed to change requirement state. Please try again.");
+      }
+    };
+    
+    // Handle escalation submission
+    const handleEscalateRequirement = async () => {
+      if (selectedEscalationUser === null) {
+        alert("Please select a person or group to escalate to.");
+        return;
+      }
+      
+      if (!escalationComment.trim()) {
+        alert("Please provide details about why you are escalating this requirement.");
+        return;
+      }
+      
+      setIsEscalating(true);
+      
+      try {
+        // Get current user ID
+        let currentUserId;
+        if (currUser) {
+          // If we have a current user, use their data
+          const userData = await getUsersDataDic();
+          const currentUserData = userData.find((u: any) => 
+            u[1] === currUser.uid
+          );
+          
+          if (currentUserData && currentUserData[0] && 
+              typeof currentUserData[0] === 'object' && 
+              'id' in currentUserData[0]) {
+            currentUserId = currentUserData[0].id;
+          } else {
+            // Fallback to user UID
+            currentUserId = currUser.uid;
+          }
+        } else {
+          // Fallback to a default ID
+          currentUserId = requirements[0]?.submitter_id || 1;
+        }
+        
+        // Get requirements ID
+        const requirementId = requirements[0]?.requirement_id;
+        
+        if (!requirementId) {
+          throw new Error("No incident ID found");
+        }
+        
+        console.log("Escalating incident:", {
+          requirementId,
+          targetId: selectedEscalationUser,
+          comment: escalationComment,
+          updatedBy: currentUserId,
+          isGroup: isGroupSelected
+        });
+        
+        // Call the Firebase function to escalate the incident
+        const success = await escalateRequirement(
+          requirementId,
+          selectedEscalationUser,
+          escalationComment,
+          currentUserId,
+        );
+        
+        if (success) {
+          setIsEscalating(false);
+          setEscalationSuccess(true);
+          
+          // Automatically set state to "Escalated"
+          setSelectedState("Escalated");
+          
+          // Update local incident state for UI feedback
+          if (requirements.length > 0) {
+            const updatedRequirements = [...requirements];
+            updatedRequirements[0].requirement_status = "Escalated";
+            setRequirements(updatedRequirements);
+          }
+          
+          // Refresh workflow data to show new entry
+          await handleFetchFlow();
+          
+          // Reset success message after 3 seconds
+          setTimeout(() => {
+            setEscalationSuccess(false);
+          }, 3000);
+          window.location.href = "/trackrequirements";
+        } else {
+          throw new Error("Failed to escalate requirement");
+        }
+      } catch (error) {
+        console.error("Error escalating requirement:", error);
+        setIsEscalating(false);
+        alert("Failed to escalate requirement. Please try again.");
+      }
+    };
+
         return(
       <div style={{ display: "flex", flexDirection: "column"}} className="text-black">
           {/* Main Content */}
@@ -297,6 +586,125 @@ const MainPage: React.FC = () => {
             Information Technology Investment Request (ITIR) Form
             </h2>
           </div>
+
+          {/* Unified Incident Management Section */}
+        {isITSupport && isAssignedToMe && (
+          <div className="px-4 pb-4 mb-4 border-b border-gray-200">
+            <h3 className="text-xl font-bold mb-3">Requirement Management</h3>
+            
+            {/* Simple tab navigation */}
+            <div className="flex mb-4 border-b">
+              <button 
+                className={`py-2 px-4 ${activeTab === 'state' ? 'border-b-2 border-blue-600 font-medium' : 'text-gray-500'}`}
+                onClick={() => setActiveTab('state')}
+              >
+                Change State
+              </button>
+              <button 
+                className={`py-2 px-4 ${activeTab === 'escalate' ? 'border-b-2 border-blue-600 font-medium' : 'text-gray-500'}`}
+                onClick={() => setActiveTab('escalate')}
+              >
+                Escalate Requirement
+              </button>
+            </div>
+            
+            {/* State change form */}
+            {activeTab === 'state' && (
+              <div className="mb-4">
+                <div className="mb-4">
+                  <label htmlFor="stateSelect" className="block mb-2 font-medium">
+                    Select new state:
+                  </label>
+                  <select
+                    id="stateSelect"
+                    className="w-full md:w-1/2 lg:w-1/3 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={handleStateChange}
+                    value={selectedState}
+                    disabled={isChangingState}
+                  >
+                    <option value="">-- Select state --</option>
+                    {REQUIREMENT_STATES.map((state, index) => (
+                      <option key={index} value={state}>
+                        {state}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <button
+                  onClick={handleChangeState}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-gray-400"
+                  disabled={!selectedState || isChangingState}
+                >
+                  {isChangingState ? "Updating..." : "Update State"}
+                </button>
+                
+                {/* Success message */}
+                {stateChangeSuccess && (
+                  <div className="mt-3 p-2 bg-green-100 text-green-700 rounded-md">
+                    Requirement state successfully updated!
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Escalation form */}
+            {activeTab === 'escalate' && (
+              <div>
+                <div className="mb-4">
+                  <label htmlFor="escalationSelect" className="block mb-2 font-medium">
+                    Select user to escalate to:
+                  </label>
+                  <select
+                    id="escalationSelect"
+                    className="w-full md:w-1/2 lg:w-1/3 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={handleEscalationChange}
+                    value={selectedEscalationUser || ""}
+                    disabled={isEscalating}
+                  >
+                    <option value="">-- Select user --</option>
+                    {escalationTargets.map(user => (
+                      <option key={`user_${user.id}`} value={user.id}>
+                        {user.displayName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="mb-4">
+                  <label htmlFor="escalationComment" className="block mb-2 font-medium">
+                    Escalation details:
+                  </label>
+                  <textarea
+                    id="escalationComment"
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
+                    placeholder="Provide details about why you are escalating this requirement..."
+                    onChange={handleCommentChange}
+                    value={escalationComment}
+                    disabled={isEscalating}
+                  ></textarea>
+                </div>
+                
+                <button
+                  onClick={handleEscalateRequirement}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-gray-400"
+                  disabled={selectedEscalationUser === null || !escalationComment.trim() || isEscalating}
+                >
+                  {isEscalating ? "Escalating..." : "Escalate Requirement"}
+                </button>
+                
+                {/* Success message */}
+                {escalationSuccess && (
+                  <div className="mt-3 p-2 bg-green-100 text-green-700 rounded-md">
+                    Requirement successfully escalated!
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+
           <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Reporter Information</h1> 
     {
       

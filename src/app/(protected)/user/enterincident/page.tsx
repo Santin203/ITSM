@@ -157,7 +157,7 @@ export default function IncidentEntryPage() {
           {
             console.log("Success")
             alert("Incident Submitted!");
-            window.location.href = "/trackincidents";
+            window.location.href = "/user/trackincidents";
           }
               
           else
