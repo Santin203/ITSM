@@ -782,10 +782,6 @@ useEffect(() => {
       
       {incidents.map((u, index) => (
               <div key='1'
-              style={{
-                marginTop: "20px",
-                fontSize: "18px"
-              }}
             > 
         <h3 style={{ marginTop: "20px", fontWeight: "bold" }}>Incident Details</h3>
         <table
@@ -1042,9 +1038,24 @@ useEffect(() => {
         {/* Incident Details Description */}
         {u.additional_details !== "" && (
         <h3 style={{ marginTop: "20px", fontWeight: "bold" }}>
-          Incident Details: {u.additional_details}
+          Incident Additional Details
         </h3>
       )}
+      <table
+       style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}
+      >
+        <tbody>
+          <tr>
+            <td style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    width: "100%",
+                  }}>
+              {u.additional_details}
+            </td>
+          </tr>
+        </tbody>
+      </table>
         </div>
       ))}
       <div style={{ display: "flex", flexDirection: "column"}} className="text-black">
