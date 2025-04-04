@@ -48,7 +48,7 @@ type Workflow = {
   order:number,
   submitter_id:number,
   time_of_update:string,
-  manager_id:number
+  manager_id:number,
 }[];  
 
 type Stakeholder = {

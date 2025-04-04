@@ -428,6 +428,21 @@ export async function escalateRequirement(requirementId, targetId, comment, upda
     // Get the document reference
     const requirementDoc = querySnapshot.docs[0];
     const requirementRef = doc(db, "Requirements", requirementDoc.id);
+    const currentTime = new Date();
+
+    //Get name from the targetId
+    const usersRef = collection(db, "Users");
+    const userQuery = query(usersRef, where("id", "==", Number(targetId)));
+    const userSnapshot = await getDocs(userQuery);
+
+    let targetName = "Unknown User";
+    if (!userSnapshot.empty) {
+      const userDoc = userSnapshot.docs[0];
+      const userData = userDoc.data();
+      targetName = `${userData.name} ${userData.last_name_1}`;
+    }
+
+
     
     // Update the requirement document
     batch.update(requirementRef, {
@@ -442,9 +457,9 @@ export async function escalateRequirement(requirementId, targetId, comment, upda
     const workflowRef = doc(collection(db, "Requirement_Workflow"));
     batch.set(workflowRef, {
       requirement_id: Number(requirementId),
-      description: `Escalated to User: ${targetId}: ${comment}`,
+      brief_description: `Requirement escalated to ${targetName} with the following comment: ${comment}`,
       submitter_id: Number(updatedBy),
-      time_of_incident: new Date(),
+      time_of_update: currentTime,
       process_type: "Escalated",
       order: Date.now(), // Simple ordering mechanism
       manager_id: Number(updatedBy)
