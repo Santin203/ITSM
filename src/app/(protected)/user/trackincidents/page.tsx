@@ -1,9 +1,7 @@
 "use client";
-import React from 'react';
-import { useState, useEffect } from "react";
-import { getCurrUserIncidentsData, getITUserIncidentsData } from '../../../../hooks/db.js'
-import { auth } from '../../../../firebaseConfig.js';
+import React, { useEffect, useState } from 'react';
 import { getCookie } from "../../../../hooks/cookies";
+import { getCurrUserIncidentsData, getITUserIncidentsData } from '../../../../hooks/db.js';
 type Incident = {
   title: string,
   description: string,

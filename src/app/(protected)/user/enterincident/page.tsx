@@ -144,7 +144,7 @@ export default function IncidentEntryPage() {
             incident_resolution_date: Timestamp.fromDate(resoldate),
             incident_start_date: Timestamp.fromDate(new Date(startDate)),
             incident_status:statuss,
-            it_id: formData.assigned_to_id,
+            assigned_to_id: formData.assigned_to_id,
             organization: organization,
             reporter_id: user_id,
             root_cause: formData.root_cause,

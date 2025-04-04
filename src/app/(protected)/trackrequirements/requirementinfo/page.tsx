@@ -1,11 +1,9 @@
 "use client";
-import React from 'react';
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getCookie } from '../../../../hooks/cookies';
-import { getRequirementwithId, getRequirementFlowithId, getCurrUserData, getStakeholderswithId, getUserDatawithId, escalateRequirement, getUsersDataDic } from '../../../../hooks/db.js'
+import React, { useEffect, useState } from 'react';
 import { auth } from '../../../../firebaseConfig.js';
-import { updateRequirementStatus } from '../../../../hooks/db.js'
+import { getCookie } from '../../../../hooks/cookies';
+import { escalateRequirement, getCurrUserData, getRequirementFlowithId, getRequirementwithId, getStakeholderswithId, getUserDatawithId, getUsersDataDic, updateRequirementStatus } from '../../../../hooks/db.js';
 
 type User = {
   rol:string,
@@ -108,7 +106,7 @@ const MainPage: React.FC = () => {
   
       return () => unsubscribe(); // Cleanup the listener
     }, []);
- 
+    
     // Check if user is IT support and if the incident is assigned to them
     useEffect(() => {
       const checkUserRole = async () => {
@@ -116,13 +114,14 @@ const MainPage: React.FC = () => {
           if (currUser) {
             const userData = await getCurrUserData();
             const roleCookie = await getCookie("role");
-            if (userData && userData[0] && roleCookie?.value === "IT") {
-              setIsITSupport(true);
+            if (userData) {
+              setIsAdmin(roleCookie?.value === "Admin");
+              setIsITSupport(roleCookie?.value === "IT"); 
               
               // Check if the current requirement is assigned to this IT user
               if (requirements.length > 0) {
                 const requirement = requirements[0];
-                if (requirement.assigned_to_id === userData[0].id) {
+                if (requirement.assigned_to_id === userData.id) {
                   setIsAssignedToMe(true);
                 }
               }
@@ -142,7 +141,7 @@ const MainPage: React.FC = () => {
 
     useEffect(() => {
       const fetchEscalationTargets = async () => {
-        if (!isITSupport) return;
+        if (!isITSupport && !isAdmin ) return;
         
         try {
           // Get current user's data to identify and exclude them
@@ -181,7 +180,7 @@ const MainPage: React.FC = () => {
       };
       
       fetchEscalationTargets();
-    }, [isITSupport]);
+    }, [isITSupport, isAdmin]);
 
 
 
@@ -220,6 +219,9 @@ const MainPage: React.FC = () => {
            }); 
            
            setRequirements(tasks);
+           if (tasks.length > 0) {
+            setSelectedState(tasks[0].requirement_status || "");
+          }
            const subs = await getUserDatawithId(Number((tasks as any)[0]["submitter_id"]));
             if(subs)
             {
@@ -300,45 +302,6 @@ const MainPage: React.FC = () => {
         fetch();
     });
 
-    // Check user role when component mounts
-    useEffect(() => {
-      
-      const fetch = async (): Promise<void> => {   
-        const roleCookie = await getCookie("role"); 
-        
-        if (uDatafromDb.length > 0 && requirements.length > 0) {
-          const user = uDatafromDb[0];
-          const requirement = requirements[0];
-    
-          
-          setIsAdmin(roleCookie?.value === "Admin");
-          setIsITSupport(roleCookie?.value === "IT");
-          
-          if (requirement.assigned_to_id === user.id && (roleCookie?.value === "Admin" || roleCookie?.value === "IT")) 
-            {
-            setIsAssignedToMe(true);
-          }
-        }
-        
-      }
-  
-      fetch();
-      }, [uDatafromDb,requirements]);
-
-    /*useEffect(() => {
-      if (uDatafromDb.length > 0 && requirements.length > 0) {
-        const user = uDatafromDb[0];
-        const requirement = requirements[0];
-    
-        if (user.rol === "IT") {
-          setIsITSupport(true);
-          if (requirement.assigned_to_id === user.id) {
-            setIsAssignedToMe(true);
-          }
-        }
-      }
-    }, [uDatafromDb, requirements]);*/
-
     useEffect(() => 
       {
         const fetch = async(): Promise<void>=>{
@@ -354,8 +317,8 @@ const MainPage: React.FC = () => {
   }
 
   const handleResolveRequirement = async () => {
-    if (!currUser || !isITSupport || !isAssignedToMe || !isAdmin) return;
-  
+    if (!currUser || (!isITSupport && !isAdmin) || !isAssignedToMe) return;
+    
     const requirementId = localStorage.getItem("requirement_id");
     if (!requirementId || !resolutionDetails.trim()) {
       alert("Please provide resolution details.");
@@ -382,7 +345,9 @@ const MainPage: React.FC = () => {
       setUpdateSuccess(false);
     } finally {
       setIsUpdating(false);
-      setTimeout(() => setUpdateSuccess(null), 3000);
+      setTimeout(() => {
+        setUpdateSuccess(null);
+      }, 3000);
     }
   };
 
@@ -458,7 +423,7 @@ const MainPage: React.FC = () => {
           return false; // Ensure a falsy value is returned on failure
         });
         
-        if (success) {
+        if (success === 0) {
           setIsChangingState(false);
           setStateChangeSuccess(true);
           
@@ -588,7 +553,7 @@ const MainPage: React.FC = () => {
           </div>
 
           {/* Unified Incident Management Section */}
-        {isITSupport && isAssignedToMe && (
+        {(isAdmin || isITSupport) && isAssignedToMe && (
           <div className="px-4 pb-4 mb-4 border-b border-gray-200">
             <h3 className="text-xl font-bold mb-3">Requirement Management</h3>
             
@@ -1208,7 +1173,7 @@ const MainPage: React.FC = () => {
         }
       </div>
 
-      {(isAdmin || isITSupport) && isAssignedToMe && requirements[0]?.process_type !== "Resolved" && (
+      {(isAdmin || isITSupport) && isAssignedToMe && requirements[0]?.requirement_status !== "Resolved" && (
       <div className="mt-4">
         {updateSuccess !== null && (
           <div className={`mx-4 p-3 rounded ${updateSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
