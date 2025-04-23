@@ -25,6 +25,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const [roles, setRoles] = useState([]); // State to track admin status
     const [incidentsSubmenu, setIncidentsSubmenu] = useState(false); // Toggle state for the submenu
     const [requirementsSubmenu, setRequirementsSubmenu] = useState(false); // Toggle state for the submenu
+    const [reportsSubmenu, setReportsSubmenu] = useState(false); // Toggle state for the Reports submenu
     const [userData, setUserData] = useState({name:"", img:""});
     const [currRole, setCurrRole] = useState("");
     const {logout} = useAuth();
@@ -198,6 +199,30 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                 </li>
                             </ul>
                             )}     
+
+
+                        {/* Reports */}
+                        <li
+                            style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
+                            onClick={() => setReportsSubmenu(!reportsSubmenu)}
+                        >
+                            <ClipboardIcon style={{ width: "20px", color: "#FFFFFF" }} />
+                            <span>Reports ▼</span>
+                        </li>
+                        {reportsSubmenu && (
+                            <ul style={{ paddingLeft: "32px" }}>
+                                <li style={{ padding: "8px", cursor: "pointer" }}>
+                                    <Link href="/reports/status" className="text-white font-medium no-underline">
+                                        Status Report
+                                    </Link>
+                                </li>
+                                <li style={{ padding: "8px", cursor: "pointer" }}>
+                                    <Link href="/reports/time" className="text-white font-medium no-underline">
+                                        Time Report
+                                    </Link>
+                                </li>
+                            </ul>
+                        )}
 
 
                         {/* Not Yet Needed to Implement */}
