@@ -1,9 +1,14 @@
 "use client";
 
+import { createCookie, getCookie } from "@/hooks/cookies";
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
+import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import {
     BellIcon,
     ClipboardIcon,
+    DocumentChartBarIcon,
     HomeIcon,
+    UserGroupIcon,
     UsersIcon
 } from "@heroicons/react/24/outline";
 import Link from 'next/link';
@@ -11,9 +16,6 @@ import React, { useEffect, useState } from 'react';
 import { auth } from '../../firebaseConfig';
 import { getCurrUserData, sleep } from '../../hooks/db';
 import { useAuth } from '../../hooks/useAuth';
-import { createCookie, getCookie } from "@/hooks/cookies";
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
-import { ChevronDownIcon } from '@heroicons/react/20/solid'
 
 
 interface LayoutProps {
@@ -26,6 +28,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const [incidentsSubmenu, setIncidentsSubmenu] = useState(false); // Toggle state for the submenu
     const [requirementsSubmenu, setRequirementsSubmenu] = useState(false); // Toggle state for the submenu
     const [reportsSubmenu, setReportsSubmenu] = useState(false); // Toggle state for the Reports submenu
+    const [groupsSubmenu, setGroupsSubmenu] = useState(false); // Toggle state for the Reports submenu
     const [userData, setUserData] = useState({name:"", img:""});
     const [currRole, setCurrRole] = useState("");
     const {logout} = useAuth();
@@ -138,8 +141,60 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                     </Link>
                                 </li>
                             </ul>
-                            )}
+                        )}
 
+                        {/* Groups Management options for admin */}
+                        {currRole == "Admin" && (<li
+                            style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
+                            onClick={() => setGroupsSubmenu(!groupsSubmenu)}
+                            >
+                            <UserGroupIcon style={{ width: "20px", color: "#FFFFFF" }} />
+                            <span>Groups ▼</span>
+                        </li>)}
+                        {groupsSubmenu && (
+                            <ul style={{ paddingLeft: "32px" }}>
+                                <li
+                                    style={{ padding: "8px", cursor: "pointer" }}
+                                    // onClick={() => setEnterIncidentModal(true)}
+                                >
+                                    <Link href="/admin/creategroup" className="text-white font-medium no-underline">
+                                        Create Group
+                                    </Link>
+                                </li>
+                                <li
+                                    style={{ padding: "10px", cursor: "pointer" }}
+                                    // onClick={() => setTrackIncidentModal(true)}
+                                >
+                                    <Link href="/admin/viewgroups" className="text-white font-medium no-underline">
+                                        View Groups
+                                    </Link>
+                                </li>
+                            </ul>
+                        )}
+                        
+                        {/* Reports For IT supports*/}
+                        {/* Reports */}
+                        {currRole == "IT" && (<li
+                            style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
+                            onClick={() => setReportsSubmenu(!reportsSubmenu)}
+                        >
+                            <DocumentChartBarIcon style={{ width: "20px", color: "#FFFFFF" }} />
+                            <span>Reports ▼</span>
+                        </li>)}
+                        {reportsSubmenu && (
+                            <ul style={{ paddingLeft: "32px" }}>
+                                <li style={{ padding: "8px", cursor: "pointer" }}>
+                                    <Link href="/reports/status" className="text-white font-medium no-underline">
+                                        Status Report
+                                    </Link>
+                                </li>
+                                <li style={{ padding: "8px", cursor: "pointer" }}>
+                                    <Link href="/reports/time" className="text-white font-medium no-underline">
+                                        Time Report
+                                    </Link>
+                                </li>
+                            </ul>
+                        )}
 
                         {/* Incidents */}
                         {currRole != "Admin" && (<li                     
@@ -201,28 +256,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             )}     
 
 
-                        {/* Reports */}
-                        <li
-                            style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
-                            onClick={() => setReportsSubmenu(!reportsSubmenu)}
-                        >
-                            <ClipboardIcon style={{ width: "20px", color: "#FFFFFF" }} />
-                            <span>Reports ▼</span>
-                        </li>
-                        {reportsSubmenu && (
-                            <ul style={{ paddingLeft: "32px" }}>
-                                <li style={{ padding: "8px", cursor: "pointer" }}>
-                                    <Link href="/reports/status" className="text-white font-medium no-underline">
-                                        Status Report
-                                    </Link>
-                                </li>
-                                <li style={{ padding: "8px", cursor: "pointer" }}>
-                                    <Link href="/reports/time" className="text-white font-medium no-underline">
-                                        Time Report
-                                    </Link>
-                                </li>
-                            </ul>
-                        )}
+                        
 
 
                         {/* Not Yet Needed to Implement */}
@@ -254,19 +288,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         </li> */}
                     </ul>
 
-
-                    {/* YOUR TEAM */}
-                    {/* <h3 style={{ fontSize: "14px", color: "#CBD5E1", marginTop: "20px", paddingLeft: "15px" }}>
-                        Your Team
-                    </h3>
-                    <ul style={{ listStyleType: "none", paddingLeft: "15px" }}>
-                        <li style={{ padding: "10px", display: "flex", alignItems: "center", gap: "10px" }}>
-                        <UserGroupIcon style={{ width: "20px", color: "#FFFFFF" }} />
-                        <Link href="#" style={{ textDecoration: "none", color: "#FFFFFF", fontSize: "16px" }}>
-                            My Team
-                        </Link>
-                        </li>
-                    </ul> */}
                 </nav>
             </aside>
             <main className="flex-1 flex flex-col bg-gray-50">
