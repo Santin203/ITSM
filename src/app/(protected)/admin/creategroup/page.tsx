@@ -3,8 +3,8 @@ import React from 'react';
 const StatusPage: React.FC = () => {
     return (
         <div className='text-black'>
-            <h1>Status Reports</h1>
-            <p>This is the status reports page.</p>
+            <h1>create group</h1>
+            <p>This is the create group page.</p>
         </div>
     );
 };
