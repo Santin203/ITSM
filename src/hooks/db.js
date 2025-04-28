@@ -1,5 +1,5 @@
 import { confirmPasswordReset, sendPasswordResetEmail, signOut, getAuth, onAuthStateChanged } from "firebase/auth";
-import {collection, doc, getDoc, getDocs, getFirestore, query,where, writeBatch, updateDoc , addDoc} from "firebase/firestore";
+import {collection, doc, getDoc, getDocs, getFirestore, query,where, writeBatch, updateDoc , addDoc, setDoc, arrayUnion} from "firebase/firestore";
 import { app, auth, db } from "../firebaseConfig";
 import { deleteCookie } from "../hooks/cookies";
 import { type } from "os";
@@ -811,3 +811,25 @@ export async function addStakeholder(i) {
   return (0);
 }
 
+export async function newGroup(id, name, members) {
+  const idstring = String(id);
+  await setDoc(doc(db, "Groups", idstring), {
+    id : id,
+    name: name,
+    members: members
+  });
+
+  for(const memberID of members)
+  {
+    addGroupToUser(memberID, id);
+  }
+  return (0);
+}
+
+export async function addGroupToUser(firebaseid, groupid)
+{
+  const userRef = doc(db, "Users", firebaseid);
+  await updateDoc(userRef, {
+    groups: arrayUnion(groupid)
+  });
+}
