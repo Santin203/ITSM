@@ -9,13 +9,15 @@ import {
     DocumentChartBarIcon,
     HomeIcon,
     UserGroupIcon,
-    UsersIcon
+    UsersIcon,
+    ClipboardDocumentListIcon
 } from "@heroicons/react/24/outline";
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { auth } from '../../firebaseConfig';
 import { getCurrUserData, sleep } from '../../hooks/db';
 import { useAuth } from '../../hooks/useAuth';
+import { create } from "domain";
 
 
 interface LayoutProps {
@@ -31,6 +33,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const [groupsSubmenu, setGroupsSubmenu] = useState(false); // Toggle state for the Reports submenu
     const [userData, setUserData] = useState({name:"", img:""});
     const [currRole, setCurrRole] = useState("");
+    const [isTriage, setIsTriage] = useState(false);
     const {logout} = useAuth();
     const currUser = auth.currentUser; 
     //console.log("Current User:", currUser);
@@ -47,6 +50,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 const img = data["picture_url"];
                 setUserData({name, img});
                 setRoles(data["rol"]);
+                if(data["groups"].includes(-1))
+                {
+                    setIsTriage(true);
+                    createCookie("isTriage", "true");
+                }
+                else
+                {
+                    setIsTriage(false);
+                    createCookie("isTriage", "false");
+                }
+
                 if(data["rol"].length > 1)
                 {
                     const roleCookie = await getCookie("role");
@@ -174,6 +188,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         
                         {/* Reports For IT supports*/}
                         {/* Reports */}
+                        {currRole == "IT" && isTriage && (<li
+                            style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
+                        >
+                            <ClipboardDocumentListIcon style={{ width: "20px", color: "#FFFFFF" }} />
+                            <Link href="/assigntickets" className="text-white no-underline">
+                                Assign Tickets
+                            </Link>
+                        </li>)}
+                            
+                        {/* Triage groups (only in the IT support profile)*/}
                         {currRole == "IT" && (<li
                             style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
                             onClick={() => setReportsSubmenu(!reportsSubmenu)}

@@ -7,6 +7,7 @@ export function middleware(req: NextRequest) {
     const loggedinCookie = req.cookies.get('loggedin')?.value
     const mfaedCookie = req.cookies.get('mfaed')?.value  
     const roleCookie = req.cookies.get('role')?.value
+    const triageCookie = req.cookies.get('isTriage')?.value
     // If the user is not logged in, redirect to the login page
     if(req.nextUrl.pathname.startsWith('/admin') || req.nextUrl.pathname.startsWith('/user')) {
         if(loggedinCookie != "true")
@@ -29,6 +30,11 @@ export function middleware(req: NextRequest) {
 
     if(req.nextUrl.pathname.startsWith('/reports')) {
         if(roleCookie != "IT")
+            return NextResponse.redirect(new URL('/user', req.url))
+    }
+
+    if(req.nextUrl.pathname.startsWith('/assigntickets')) {
+        if(roleCookie != "IT" || triageCookie != "true")
             return NextResponse.redirect(new URL('/user', req.url))
     }
 
