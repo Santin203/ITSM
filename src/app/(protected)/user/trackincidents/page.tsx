@@ -211,7 +211,7 @@ const MainPage: React.FC = () => {
       case "Escalated": return "bg-red-50";
       case "In Progress": return "bg-blue-50";
       case "Assigned": return "bg-yellow-50";
-      case "Sent": return "bg-gray-50";
+      case "Sent": return "bg-black-50";
       case "Resolved": return "bg-green-50";
       default: return "bg-white";
     }
@@ -358,11 +358,11 @@ const MainPage: React.FC = () => {
             {orderedStatusGroups.length > 0 ? (
               orderedStatusGroups.map(statusGroup => (
                 <div key={statusGroup} className="mb-6">
-                  <h3 className={`text-lg font-bold p-2 ${getStatusColor(statusGroup)} rounded-t-lg border-b border-gray-300`}>
+                  <h3 className={`text-lg font-bold p-2 ${getStatusColor(statusGroup)} rounded-t-lg border-b border-gray-300 text-black`}>
                     {statusGroup} ({groupedIncidents[statusGroup].length})
                   </h3>
                   
-                  <table className={`min-w-full text-gray-800 ${getStatusColor(statusGroup)}`}>
+                  <table className={`min-w-full text-black ${getStatusColor(statusGroup)}`}>
                     <thead>
                       <tr>
                         {isITSupport && <th className="px-4 py-2 text-left">Type</th>}
@@ -411,14 +411,14 @@ const MainPage: React.FC = () => {
                 </div>
               ))
             ) : (
-              <div className="text-center text-gray-500 py-8">
+              <div className="text-center text-black py-8">
                 No incidents found matching your criteria
               </div>
             )}
           </div>
         ) : (
           // Non-grouped display (original table)
-          <table className="min-w-full text-gray-800">
+          <table className="min-w-full text-black">
             <thead>
               <tr>
                 {isITSupport && <th className="px-4 py-2 text-left">Type</th>}
@@ -472,7 +472,7 @@ const MainPage: React.FC = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={isITSupport ? 7 : 6} className="px-4 py-4 text-center text-gray-500">
+                  <td colSpan={isITSupport ? 7 : 6} className="px-4 py-4 text-center text-black">
                     No incidents found matching your criteria
                   </td>
                 </tr>
