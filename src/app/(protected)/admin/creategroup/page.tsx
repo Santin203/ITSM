@@ -20,7 +20,8 @@ const CreateGroupPage: React.FC = () => {
           const allUsers = await getUsersDataDic();
           const allGroups = await getAllGroups();
           const allGroupNames = allGroups.map((group: any) => group.name.toLowerCase());
-          const nextID = -1*(allGroups.length + 1);
+          const allGroupIDs = allGroups.map((group: any) => group.id as number);
+          const nextID = Math.min(...allGroupIDs) - 1 ;
           console.log("nextid", nextID);
           const usersList = allUsers
             .map((userTuple: any) => {
@@ -62,6 +63,7 @@ const CreateGroupPage: React.FC = () => {
       (m) => (m.name).toLowerCase().includes(memberSearch.toLowerCase()) && !members.includes(m.name)
     );
     
+    console.log("nextID", nextID);
     const addMember = (member : any) => {
       if (member && !members.includes(member)) {
         setMembers([...members, member]);
