@@ -118,7 +118,7 @@ export default function IncidentEntryPage() {
     fetchUserData();
   }, []);
 
-   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
           const { name, value } = e.target;
           setFormData((prev) => ({ ...prev, [name]: value }));
         };
@@ -191,7 +191,7 @@ export default function IncidentEntryPage() {
 
         {/* Organization Details */}
         <table
-          style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+          style={{ width: "75%", maxWidth: "900px", borderCollapse: "collapse", marginTop: "20px", marginLeft: "0" }}
         >
           <tbody>
           <tr>
@@ -209,7 +209,6 @@ export default function IncidentEntryPage() {
             style={{
               padding: "10px",
               border: "1px solid #ccc",
-              width: "100%",
             }}
           >
             <input
@@ -238,7 +237,6 @@ export default function IncidentEntryPage() {
             style={{
               padding: "10px",
               border: "1px solid #ccc",
-              width: "100%",
             }}
           >
             <input
@@ -267,7 +265,6 @@ export default function IncidentEntryPage() {
             style={{
               padding: "10px",
               border: "1px solid #ccc",
-              width: "100%",
             }}
           >
             <input
@@ -286,7 +283,7 @@ export default function IncidentEntryPage() {
         {/* Incident Details */}
         <h3 style={{ marginTop: "20px", fontWeight: "bold" }}>Incident Details</h3>
         <table
-          style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}
+          style={{ width: "75%", maxWidth: "900px", borderCollapse: "collapse", marginTop: "10px", marginLeft: "0" }}
         >
           <tbody>
               <tr>
@@ -305,7 +302,6 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                 <input
@@ -335,7 +331,6 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   <input
@@ -365,7 +360,6 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   <input
@@ -396,7 +390,6 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   <input
@@ -427,7 +420,6 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   <input
@@ -458,7 +450,6 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   <input
@@ -489,7 +480,6 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   <select
@@ -498,7 +488,8 @@ export default function IncidentEntryPage() {
                     required
                     value={statuss}
                     onChange={(e) => setStatus(e.target.value)}
-                    className="dark:text-black border rounded px-3 py-2 mb-4 w-full"
+                    className="dark:text-black border rounded px-3 py-2 mb-4"
+                    style={{ width: "250px", maxWidth: "100%" }}
                   >
                     <option value="" disabled>Select Status</option>
                     <option defaultChecked value ="Sent">Sent</option>
@@ -525,7 +516,6 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   <input
@@ -555,7 +545,6 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   <input
@@ -565,8 +554,7 @@ export default function IncidentEntryPage() {
                   onChange={handleChange}
                   value={formData.assigned_to_id}
                   className="text-black border rounded px-4 py-2 mb-4 w-medium"
-                  style={{ width: "100%" }}
-                  
+                  style={{ width: "250px", maxWidth: "100%" }}
                 />
                 </td>
               </tr>
@@ -578,7 +566,7 @@ export default function IncidentEntryPage() {
           Incident Date and Time
         </h3>
         <table
-          style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}
+          style={{ width: "75%", maxWidth: "900px", borderCollapse: "collapse", marginTop: "10px", marginLeft: "0" }}
         >
           <tbody>
             <tr>
@@ -597,13 +585,12 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   <input
                       id = "incident_start_date"
                       type="date"
-                      style={{ width: "100%" }}
+                      style={{ width: "250px", maxWidth: "100%" }}
                       value={startDate}
                       onChange={(e)=>setStartDate(e.target.value)}
                       required
@@ -626,13 +613,12 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   <input
                       id = "incident_reported_date"
                       type="datetime-local"
-                      style={{ width: "100%" }}
+                      style={{ width: "250px", maxWidth: "100%" }}
                       value={reportedDateTime}
                       readOnly
                     />
@@ -654,13 +640,12 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   <input
                       id = "incident_resolution_date"
                       type="text"
-                      style={{ width: "100%" }}
+                      style={{ width: "250px", maxWidth: "100%" }}
                       value="N/A"
                       readOnly
                     />
@@ -672,25 +657,27 @@ export default function IncidentEntryPage() {
         {/* Incident Details Description */}
         
         <h3 style={{ marginTop: "20px", fontWeight: "bold" }}>Incident Details</h3>
-        <input
-                  type="text"
+        <textarea
                   id="additional_details"
                   name="additional_details"
                   onChange={handleChange}
                   value={formData.additional_details}
                   className="text-black border rounded px-4 py-2 mb-4 w-medium"
                   style={{
-                    width: "100%",
+                    width: "75%",
+                    maxWidth: "900px",
                     height: "200px",
                     padding: "10px",
                     border: "1px solid #ccc",
                   }}
                 />
-        <input
-              type="submit"
-              value="Submit"
-              className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
-            />
+        <div style={{ width: "75%", maxWidth: "900px", marginLeft: "0" }}>
+          <input
+                type="submit"
+                value="Submit"
+                className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
+              />
+        </div>
       </div>
     </div>
     </fieldset>

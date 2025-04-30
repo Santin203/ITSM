@@ -33,6 +33,7 @@ const MainPage: React.FC = () => {
   const [isITSupport, setIsITSupport] = useState(false);
   const [incidentTypeFilter, setIncidentTypeFilter] = useState("all"); // "all", "sent", or "received"
   const [roleChecked, setRoleChecked] = useState(false);// Wait for role to be determined
+  const [groupByStatus, setGroupByStatus] = useState(true); // New state for grouping
 
   const [formData, setFormData] = useState({
     title: "",
@@ -108,7 +109,7 @@ const MainPage: React.FC = () => {
   const compareDates = (d1:string, d2:string, d3:string) => {
     return(d1 <= d2 && d2 <= d3);
   }
-console.log(status);
+
   const filteredIncidents = incidents.filter((incident) => {
     if (isITSupport && incidentTypeFilter !== "all") {
       if (incidentTypeFilter === "sent" && incident.incidentType !== "sent") return false;
@@ -117,14 +118,32 @@ console.log(status);
 
     const matchesTitle = formData.title === "" || incident.title.toLowerCase().includes(formData.title.toLowerCase());
     const matchesStatus = status === "" || String(incident.incident_status) === String(status);
-    const matchesDate = date === "" && endDate === "" || compareDates(date, incident.incident_report_date, endDate) //&& incident.incident_report_date =<= endDate;
+    const matchesDate = date === "" && endDate === "" || compareDates(date, incident.incident_report_date, endDate);
       
-
     return matchesTitle && matchesStatus && matchesDate;
   });
 
+  // Define status priority order
+  const statusOrder: Record<string, number> = {
+    "Escalated": 1,
+    "In Progress": 2,
+    "Assigned": 3,
+    "Sent": 4,
+    "Resolved": 5
+  };
 
   const sortedIncidents = [...filteredIncidents].sort((a, b) => {
+    // Always prioritize sorting by status first
+    if (a.incident_status !== b.incident_status) {
+      // Get the order value for each status with type safety
+      const orderA = statusOrder[a.incident_status] !== undefined ? statusOrder[a.incident_status] : 999;
+      const orderB = statusOrder[b.incident_status] !== undefined ? statusOrder[b.incident_status] : 999;
+      
+      // Sort by the defined status order
+      return orderA - orderB;
+    }
+    
+    // If statuses are the same, use other sorting criteria
     for (const col in order) {
       if (order[col as keyof Order] !== 0) {
         if (typeof (a as any)[col] === "string" && typeof (b as any)[col] === "string") {
@@ -137,12 +156,29 @@ console.log(status);
     return 0;
   });
 
+  // Group incidents by status
+  const groupedIncidents = groupByStatus ? 
+    sortedIncidents.reduce<Record<string, any[]>>((groups, incident) => {
+      const status = incident.incident_status;
+      if (!groups[status]) {
+        groups[status] = [];
+      }
+      groups[status].push(incident);
+      return groups;
+    }, {}) : 
+    {};
+
+  // Order the status groups by priority
+  const orderedStatusGroups = groupByStatus ? 
+    Object.keys(groupedIncidents).sort((a, b) => {
+      return (statusOrder[a] || 999) - (statusOrder[b] || 999);
+    }) : 
+    [];
 
   const handleIncident = async (incident_id: number) => {
     localStorage.setItem("incident_id", incident_id.toString());
     window.location.href = "trackincidents/incidentinfo";
   };
-
 
   const handleSort = (col: keyof Order) => {
     setOrder((o) => {
@@ -155,12 +191,10 @@ console.log(status);
     });
   };
 
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
  
   const getPageTitle = () => {
     if (isITSupport) {
@@ -171,8 +205,19 @@ console.log(status);
     return "My Incidents";
   };
 
-  if (!roleChecked) return <div className="text-black p-4">Loading...</div>; //  Prevent render until role is known
+  // Helper function to get a background color for each status group
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Escalated": return "bg-red-50";
+      case "In Progress": return "bg-blue-50";
+      case "Assigned": return "bg-yellow-50";
+      case "Sent": return "bg-gray-50";
+      case "Resolved": return "bg-green-50";
+      default: return "bg-white";
+    }
+  };
 
+  if (!roleChecked) return <div className="text-black p-4">Loading...</div>; //  Prevent render until role is known
 
   return (
     <div>
@@ -228,10 +273,11 @@ console.log(status);
               </div>
             )}
             
-            <div className="flex space-x-4 mt-2">
+            {/* Horizontal filter layout with consistent sizing */}
+            <div className="flex items-end space-x-8 ml-2">
               <div>
                 <label htmlFor="title" className="block mb-2">
-                  <p className="text-black mt-2">Search for Title:</p>
+                  <span className="text-black">Search for Title:</span>
                 </label>
                 <input
                   type="text"
@@ -239,21 +285,21 @@ console.log(status);
                   name="title"
                   onChange={handleChange}
                   value={formData.title}
-                  className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                  className="text-black border rounded px-4 py-2 w-64"
                 />
-              </div>
               </div>
               
               <div>
-              <label htmlFor="incident_status" className="block mb-2">
-              <p className="text-black mt-2">Search for Incident Status:</p>
-              </label>
+                <label htmlFor="incident_status" className="block mb-2">
+                  <span className="text-black">Search for Incident Status:</span>
+                </label>
                 <select
-                  className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                  id="incident_status"
+                  className="text-black border rounded px-4 py-2 w-64 h-10"
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
                 >
-                  <option defaultChecked value="">All</option>
+                  <option value="">All</option>
                   <option value="Sent">Sent</option>
                   <option value="Assigned">Assigned</option>
                   <option value="In Progress">In Progress</option>
@@ -261,110 +307,179 @@ console.log(status);
                   <option value="Resolved">Resolved</option>
                 </select>
               </div>
-            
-            
-            <div className="flex space-x-4 mt-2">
-                <div>
-                  <label className="block text dark:text-gray-700 mt-2">Initial Date</label>
-                  <input
-                    type="date"
-                    className="text-black border rounded px-4 py-2 mb-4 w-medium"
-                    value={date}
-                    onChange={(e) => setStartDate(e.target.value)}
-                  />
-                </div>
-                <div>
-                <label className="block text dark:text-gray-700 mt-2">End Date</label>
+              
+              <div>
+                <label htmlFor="start_date" className="block mb-2">
+                  <span className="text-black">Initial Date</span>
+                </label>
                 <input
                   type="date"
-                  className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                  id="start_date"
+                  className="text-black border rounded px-4 py-2 w-64"
+                  value={date}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="end_date" className="block mb-2">
+                  <span className="text-black">End Date</span>
+                </label>
+                <input
+                  type="date"
+                  id="end_date"
+                  className="text-black border rounded px-4 py-2 w-64"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                 />
               </div>
-              </div>
+            </div>
+
+            {/* Grouping toggle */}
+            <div className="mt-4 ml-2">
+              <label className="flex items-center text-black">
+                <input
+                  type="checkbox"
+                  checked={groupByStatus}
+                  onChange={() => setGroupByStatus(!groupByStatus)}
+                  className="mr-2"
+                />
+                <span>Group incidents by status</span>
+              </label>
+            </div>
         </fieldset> 
         </form>
       </div>
       
-      <main className="overflow-x-auto bg-white shadow-md rounded-lg p-6">
-        <table className="min-w-full text-gray-800">
-          <thead>
-            <tr>
-              {isITSupport && (
-                <th className="px-4 py-2 text-left">Type</th>
-              )}
-              <th className="px-4 py-2 text-left">Title
-                <button
-                  onClick={() => handleSort("title")}
-                  className="px-4 py-2 text-left"
-                >
-                  <span>{order["title"] >= 0 ? '>' : '<'}</span>
-                </button>
-              </th>
-              <th className="px-4 py-2 text-left">Report Date
-                <button
-                  onClick={() => handleSort("incident_report_date")}
-                  className="px-4 py-2 text-left"
-                >
-                  <span>{order["incident_report_date"] >= 0 ? '>' : '<'}</span>
-                </button>
-              </th>
-              <th className="px-4 py-2 text-left">Status
-                <button
-                  onClick={() => handleSort("incident_status")}
-                  className="px-4 py-2 text-left"
-                >
-                  <span>{order["incident_status"] >= 0 ? '>' : '<'}</span>
-                </button>
-              </th>
-              <th className="px-4 py-2 text-left">Incident ID</th>
-              <th className="px-4 py-2 text-left">Description</th>
-              <th className="px-4 py-2 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedIncidents.length > 0 ? (
-              sortedIncidents.map((incident, index) => (
-                <tr 
-                  key={index} 
-                  className={`border-t border-gray-200` //${
-                    // isITSupport && incident.incidentType === "received" 
-                      // ? "bg-blue-50" 
-                      // : ""
-                  }//`}
-                >
-                  {/* Type column only for IT users */}
-                  {isITSupport && (
-                    <td className="px-4 py-2">
-                      {incident.incidentType === "received" ? "Assigned to me" : "Reported by me"}
-                    </td>
-                  )}
-                  <td className="px-4 py-2">{incident.title}</td>
-                  <td className="px-4 py-2">{String(incident.incident_report_date)}</td>
-                  <td className="px-4 py-2">{incident.incident_status}</td>
-                  <td className="px-4 py-2">{incident.incident_id}</td>
-                  <td className="px-4 py-2">{incident.description}</td>
-                  <td className="px-4 py-2">
-                    <button
-                      onClick={() => handleIncident(incident.incident_id)}
-                      className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                      type="button"
-                    >
-                      More
-                    </button>
-                  </td>
-                </tr>
+      <main className="overflow-x-auto bg-white shadow-md rounded-lg p-6 mt-8">
+        {groupByStatus ? (
+          // Grouped display
+          <div>
+            {orderedStatusGroups.length > 0 ? (
+              orderedStatusGroups.map(statusGroup => (
+                <div key={statusGroup} className="mb-6">
+                  <h3 className={`text-lg font-bold p-2 ${getStatusColor(statusGroup)} rounded-t-lg border-b border-gray-300`}>
+                    {statusGroup} ({groupedIncidents[statusGroup].length})
+                  </h3>
+                  
+                  <table className={`min-w-full text-gray-800 ${getStatusColor(statusGroup)}`}>
+                    <thead>
+                      <tr>
+                        {isITSupport && <th className="px-4 py-2 text-left">Type</th>}
+                        <th className="px-4 py-2 text-left">
+                          Title
+                          <button onClick={() => handleSort("title")} className="px-4 py-2 text-left">
+                            <span>{order["title"] >= 0 ? '>' : '<'}</span>
+                          </button>
+                        </th>
+                        <th className="px-4 py-2 text-left">
+                          Report Date
+                          <button onClick={() => handleSort("incident_report_date")} className="px-4 py-2 text-left">
+                            <span>{order["incident_report_date"] >= 0 ? '>' : '<'}</span>
+                          </button>
+                        </th>
+                        <th className="px-4 py-2 text-left">Incident ID</th>
+                        <th className="px-4 py-2 text-left">Description</th>
+                        <th className="px-4 py-2 text-left">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {groupedIncidents[statusGroup].map((incident, index) => (
+                        <tr key={index} className="border-t border-gray-200">
+                          {isITSupport && (
+                            <td className="px-4 py-2">
+                              {incident.incidentType === "received" ? "Assigned to me" : "Reported by me"}
+                            </td>
+                          )}
+                          <td className="px-4 py-2">{incident.title}</td>
+                          <td className="px-4 py-2">{String(incident.incident_report_date)}</td>
+                          <td className="px-4 py-2">{incident.incident_id}</td>
+                          <td className="px-4 py-2">{incident.description}</td>
+                          <td className="px-4 py-2">
+                            <button
+                              onClick={() => handleIncident(incident.incident_id)}
+                              className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                              type="button"
+                            >
+                              More
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               ))
             ) : (
-              <tr>
-                <td colSpan={isITSupport ? 7 : 6} className="px-4 py-4 text-center text-gray-500">
-                  No incidents found matching your criteria
-                </td>
-              </tr>
+              <div className="text-center text-gray-500 py-8">
+                No incidents found matching your criteria
+              </div>
             )}
-          </tbody>
-        </table>
+          </div>
+        ) : (
+          // Non-grouped display (original table)
+          <table className="min-w-full text-gray-800">
+            <thead>
+              <tr>
+                {isITSupport && <th className="px-4 py-2 text-left">Type</th>}
+                <th className="px-4 py-2 text-left">
+                  Title
+                  <button onClick={() => handleSort("title")} className="px-4 py-2 text-left">
+                    <span>{order["title"] >= 0 ? '>' : '<'}</span>
+                  </button>
+                </th>
+                <th className="px-4 py-2 text-left">
+                  Report Date
+                  <button onClick={() => handleSort("incident_report_date")} className="px-4 py-2 text-left">
+                    <span>{order["incident_report_date"] >= 0 ? '>' : '<'}</span>
+                  </button>
+                </th>
+                <th className="px-4 py-2 text-left">
+                  Status
+                  <button onClick={() => handleSort("incident_status")} className="px-4 py-2 text-left">
+                    <span>{order["incident_status"] >= 0 ? '>' : '<'}</span>
+                  </button>
+                </th>
+                <th className="px-4 py-2 text-left">Incident ID</th>
+                <th className="px-4 py-2 text-left">Description</th>
+                <th className="px-4 py-2 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedIncidents.length > 0 ? (
+                sortedIncidents.map((incident, index) => (
+                  <tr key={index} className="border-t border-gray-200">
+                    {isITSupport && (
+                      <td className="px-4 py-2">
+                        {incident.incidentType === "received" ? "Assigned to me" : "Reported by me"}
+                      </td>
+                    )}
+                    <td className="px-4 py-2">{incident.title}</td>
+                    <td className="px-4 py-2">{String(incident.incident_report_date)}</td>
+                    <td className="px-4 py-2">{incident.incident_status}</td>
+                    <td className="px-4 py-2">{incident.incident_id}</td>
+                    <td className="px-4 py-2">{incident.description}</td>
+                    <td className="px-4 py-2">
+                      <button
+                        onClick={() => handleIncident(incident.incident_id)}
+                        className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                        type="button"
+                      >
+                        More
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={isITSupport ? 7 : 6} className="px-4 py-4 text-center text-gray-500">
+                    No incidents found matching your criteria
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </main>
     </div>
   );
