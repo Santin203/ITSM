@@ -350,9 +350,7 @@ export async function getAllGroups() {
     const groupsCol = collection(db, "Groups");
     const groupsSnapshot = await getDocs(groupsCol);
     const groupsData = groupsSnapshot.docs.map(doc => ({
-      id: doc.id,
       ...doc.data(),
-      isGroup: true
     }));
     return groupsData;
   } catch (error) {
