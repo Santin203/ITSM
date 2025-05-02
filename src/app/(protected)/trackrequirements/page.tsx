@@ -7,22 +7,20 @@ type Requirement = {
   requirement_submit_date:string,
   requirement_id:number,
   requirementType?:string, 
-  assigned_to_id?:number 
-  requirement_status:string
+  assigned_to_id?:number, 
+  requirement_status:string,
   process_type:string
 }[];
 
 type Order = {
   submitter_id:number,
   requirement_submit_date:number,
-  requirement_id:number
-  requirement_status:number
+  requirement_id:number,
+  requirement_status:number,
   process_type:number
 };  
 
-
 const MainPage: React.FC = () => {
-
   const [uid, setUid] = useState("");
   const [requirements, setRequirements] = useState<Requirement>([]);
   const [order, setOrder] = useState<Order>({requirement_id: 0, requirement_submit_date: 0, requirement_status: 0, submitter_id: 0, process_type: 0});
@@ -44,9 +42,8 @@ const MainPage: React.FC = () => {
       setRoleChecked(true); // Set roleChecked to true after checking role
     }
     fetch();
-    }, []);
+  }, []);
 
-  
   const handleFetchAll = async (): Promise<void> => { 
     if (isAdmin || isITSupport) {
       // For Admin and IT users, fetch both sent and received requirements
@@ -97,7 +94,6 @@ const MainPage: React.FC = () => {
     }
   };
 
- 
   useEffect(() => {
     const fetch = async(): Promise<void> => {
       if (roleChecked) {
@@ -109,7 +105,6 @@ const MainPage: React.FC = () => {
       fetch();
     }
   });
-
 
   const compareDates = (d1:string, d2:string, d3:string) => {
     return(d1 <= d2 && d2 <= d3);
@@ -124,10 +119,10 @@ const MainPage: React.FC = () => {
     }
     
     // Filter by status
-    const matchesStatus = status === "" || String(u.requirement_status) === String(status);status
+    const matchesStatus = status === "" || String(u.requirement_status) === String(status);
 
     // Filter by process type
-    const matchesProcessType = process_type === "" || String(u.process_type) === String(process_type);process_type
+    const matchesProcessType = process_type === "" || String(u.process_type) === String(process_type);
     
     // Filter by date range
     const matchesDate = date === "" && endDate === "" || compareDates(date, u.requirement_submit_date, endDate);
@@ -135,12 +130,11 @@ const MainPage: React.FC = () => {
     return matchesStatus && matchesDate && matchesProcessType;
   });
   
-
   // Ordenación dinámica
   const sortedRequirements = [...filteredRequirements].sort((a, b) => {
     for (const col in order) {
       if (order[col as keyof Order] !== 0) {
-        if (typeof (a as any)[col] === "string" && typeof (b as any)[col] == "string") {
+        if (typeof (a as any)[col] === "string" && typeof (b as any)[col] === "string") {
           return order[col as keyof Order] * ((a as any)[col].toLowerCase() > (b as any)[col].toLowerCase() ? 1 : -1);
         } else {
           return order[col as keyof Order] * ((a as any)[col] > (b as any)[col] ? 1 : -1);
@@ -154,6 +148,7 @@ const MainPage: React.FC = () => {
     localStorage.setItem("requirement_id", requirement_id.toString());
     window.location.href = "trackrequirements/requirementinfo";
   }
+  
   // Alternar orden y resetear las demás columnas
   const handleSort = (col: keyof Order) => {
     setOrder((o) => {
@@ -186,79 +181,52 @@ const MainPage: React.FC = () => {
       <div key="2">
       <form>
           <fieldset>
-          
-          <legend className="text-black font-semibold text-lg mb-4">Filter Requirements</legend>
-              
+            <legend className="text-black font-semibold text-lg mb-4">Filter Requirements</legend>
+            
+            {/* Horizontally aligned filter controls */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
               {/* Requirement Type Filter - Only for Admin and IT users */}
               {(isAdmin || isITSupport) && (
-                <div className="mb-4">
-                  <label className="block text-black mb-2">Requirement Type:</label>
-                  <div className="flex space-x-4">
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="requirementType"
-                        value="all"
-                        checked={requirementTypeFilter === "all"}
-                        onChange={() => setRequirementTypeFilter("all")}
-                        className="mr-2"
-                      />
-                      <span className="text-black">All Requirements</span>
-                    </label>
-                    
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="requirementType"
-                        value="sent"
-                        checked={requirementTypeFilter === "sent"}
-                        onChange={() => setRequirementTypeFilter("sent")}
-                        className="mr-2"
-                      />
-                      <span className="text-black">Requirements I Submitted</span>
-                    </label>
-                    
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="requirementType"
-                        value="received"
-                        checked={requirementTypeFilter === "received"}
-                        onChange={() => setRequirementTypeFilter("received")}
-                        className="mr-2"
-                      />
-                      <span className="text-black">Requirements Assigned to Me</span>
-                    </label>
-                  </div>
+                <div className="w-full">
+                  <label htmlFor="requirementType" className="block text-black mb-2">Requirement Type:</label>
+                  <select
+                    id="requirementType"
+                    className="w-full text-black border rounded px-4 py-2 h-10"
+                    value={requirementTypeFilter}
+                    onChange={(e) => setRequirementTypeFilter(e.target.value)}
+                  >
+                    <option value="all">All Requirements</option>
+                    <option value="sent">Requirements I Submitted</option>
+                    <option value="received">Requirements Assigned to Me</option>
+                  </select>
                 </div>
               )}
               
-              <div>
-
-              <label htmlFor="requirement_process" className="block mb-2">
-              <p className="text-black mt-2">Search for Requirement Process</p>
-              </label>
+              {/* Process Type Filter */}
+              <div className="w-full">
+                <label htmlFor="requirement_process" className="block text-black mb-2">Requirement Process:</label>
                 <select
-                  className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                  id="requirement_process"
+                  className="w-full text-black border rounded px-4 py-2 h-10"
                   value={process_type}
                   onChange={(e) => setProcessType(e.target.value)}
                 >
-                  <option defaultChecked value="">Not sure</option>
+                  <option value="">Not sure</option>
                   <option value="New">New</option>
                   <option value="Enhanced">Enhanced</option>
                 </select>
               </div>
 
-              <div>
-              <label htmlFor="requirement_status" className="block mb-2">
-              <p className="text-black mt-2">Search for Requirement Status:</p>
-              </label>
+              {/* Status Filter */}
+              <div className="w-full">
+                <label htmlFor="requirement_status" className="block text-black mb-2">Requirement Status:</label>
                 <select
-                  className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                  id="requirement_status"
+                  className="w-full text-black border rounded px-4 py-2 h-10"
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
                 >
-                  <option defaultChecked value="">All</option>
+                  <option value="">All</option>
                   <option value="Sent">Sent</option>
                   <option value="Assigned">Assigned</option>
                   <option value="In Progress">In Progress</option>
@@ -266,66 +234,75 @@ const MainPage: React.FC = () => {
                   <option value="Resolved">Resolved</option>
                 </select>
               </div>
-            
-            <div className="flex space-x-4 mt-2">
-                <div>
-                  <label className="block text-black mt-2">Start Date:</label>
-                  <input
-                    type="date"
-                    className="text-black border rounded px-4 py-2 mb-4 w-medium"
-                    value={date}
-                    onChange={(e) => setStartDate(e.target.value)}
-                  />
-                </div>
-                <div>
-                <label className="block text-black mt-2">End Date</label>
+              
+              {/* Start Date Filter */}
+              <div className="w-full">
+                <label htmlFor="start_date" className="block text-black mb-2">Start Date:</label>
                 <input
+                  id="start_date"
                   type="date"
-                  className="text-black border rounded px-4 py-2 mb-4 w-medium"
+                  className="w-full text-black border rounded px-4 py-2 h-10"
+                  value={date}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              
+              {/* End Date Filter */}
+              <div className="w-full">
+                <label htmlFor="end_date" className="block text-black mb-2">End Date:</label>
+                <input
+                  id="end_date"
+                  type="date"
+                  className="w-full text-black border rounded px-4 py-2 h-10"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                 />
               </div>
-              </div>
-        </fieldset> 
+            </div>
+          </fieldset> 
         </form>
-  
       </div>
       <main className="overflow-x-auto bg-white shadow-md rounded-lg p-6">
-      <table className="min-w-full text-gray-800">
-      <thead>
+        <table className="min-w-full text-gray-800">
+          <thead>
             <tr>
               {/* Type column only for Admin/IT users */}
               {(isAdmin || isITSupport) && (
                 <th className="px-4 py-2 text-left">Type</th>
               )}
               <th className="px-4 py-2 text-left">Requirement ID</th>
-              <th className="px-4 py-2 text-left">Submit Date<button
-                            onClick={() => handleSort("requirement_submit_date")}
-                            className="px-4 py-2 text-left"
-                            >
-                            <span>{order["requirement_submit_date"] >= 0 ? '>' : '<'}</span>
-                            </button>
+              <th className="px-4 py-2 text-left">
+                Submit Date
+                <button
+                  onClick={() => handleSort("requirement_submit_date")}
+                  className="px-4 py-2 text-left"
+                >
+                  <span>{order["requirement_submit_date"] >= 0 ? '>' : '<'}</span>
+                </button>
               </th>
-              <th className="px-4 py-2 text-left">Status<button
-                            onClick={() => handleSort("requirement_status")}
-                            className="px-4 py-2 text-left"
-                            >
-                            <span>{order["requirement_status"] >= 0 ? '>' : '<'}</span>
-                            </button>
+              <th className="px-4 py-2 text-left">
+                Status
+                <button
+                  onClick={() => handleSort("requirement_status")}
+                  className="px-4 py-2 text-left"
+                >
+                  <span>{order["requirement_status"] >= 0 ? '>' : '<'}</span>
+                </button>
               </th>
-              <th className="px-4 py-2 text-left">Process Type<button
-                            onClick={() => handleSort("process_type")}
-                            className="px-4 py-2 text-left"
-                            >
-                            <span>{order["requirement_status"] >= 0 ? '>' : '<'}</span>
-                            </button>
+              <th className="px-4 py-2 text-left">
+                Process Type
+                <button
+                  onClick={() => handleSort("process_type")}
+                  className="px-4 py-2 text-left"
+                >
+                  <span>{order["process_type"] >= 0 ? '>' : '<'}</span>
+                </button>
               </th>
               <th className="px-4 py-2 text-left">Submitter ID</th>
               <th className="px-4 py-2 text-left">Actions</th>
             </tr>
           </thead>
-        <tbody>
+          <tbody>
             {sortedRequirements.length > 0 ? (
               sortedRequirements.map((u, index) => (
                 <tr key={index} className="border-t border-gray-200">
@@ -353,15 +330,15 @@ const MainPage: React.FC = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={(isAdmin || isITSupport) ? 6 : 5} className="px-4 py-4 text-center text-gray-500">
+                <td colSpan={(isAdmin || isITSupport) ? 7 : 6} className="px-4 py-4 text-center text-gray-500">
                   No requirements found matching your criteria
                 </td>
               </tr>
             )}
-        </tbody>
-      </table>
-    </main>
-  </div>
+          </tbody>
+        </table>
+      </main>
+    </div>
   );
 }
 
