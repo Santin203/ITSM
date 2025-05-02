@@ -333,7 +333,16 @@ const MainPage: React.FC = () => {
       const result = await updateRequirementStatus(requirementId, "Resolved", resolutionDetails);
       if (result === 0) {
         setUpdateSuccess(true);
-        setShowResolutionForm(false);
+        setActiveTab("state"); // Switch to state tab after resolving
+        
+        // Update local requirement state for UI feedback
+        if (requirements.length > 0) {
+          const updatedRequirements = [...requirements];
+          updatedRequirements[0].requirement_status = "Resolved";
+          setRequirements(updatedRequirements);
+        }
+        
+        // Reset form and refresh data
         setResolutionDetails("");
         await handleFetchAll();
         await handleFetchFlow();
@@ -366,6 +375,11 @@ const MainPage: React.FC = () => {
   // Handle state change
   const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedState(e.target.value);
+  };
+
+  // Handle resolution comment change
+  const handleResolutionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setResolutionDetails(e.target.value);
   };
 
   // Handle state change submission
@@ -544,7 +558,7 @@ const MainPage: React.FC = () => {
     };
 
         return(
-      <div style={{ display: "flex", flexDirection: "column"}} className="text-black">
+      <div style={{ display: "flex", flexDirection: "column", marginLeft: "40px" }} className="text-black">
           {/* Main Content */}
           <div>
             <h2 style={{ fontSize: "20px", fontWeight: "bold", color:"navy", textAlign: "center" }}>
@@ -557,7 +571,7 @@ const MainPage: React.FC = () => {
           <div className="px-4 pb-4 mb-4 border-b border-gray-200">
             <h3 className="text-xl font-bold mb-3">Requirement Management</h3>
             
-            {/* Simple tab navigation */}
+            {/* Tab navigation with added Resolve tab */}
             <div className="flex mb-4 border-b">
               <button 
                 className={`py-2 px-4 ${activeTab === 'state' ? 'border-b-2 border-blue-600 font-medium' : 'text-gray-500'}`}
@@ -571,6 +585,14 @@ const MainPage: React.FC = () => {
               >
                 Escalate Requirement
               </button>
+              {requirements[0]?.requirement_status !== "Resolved" && (
+                <button 
+                  className={`py-2 px-4 ${activeTab === 'resolve' ? 'border-b-2 border-blue-600 font-medium' : 'text-gray-500'}`}
+                  onClick={() => setActiveTab('resolve')}
+                >
+                  Resolve Requirement
+                </button>
+              )}
             </div>
             
             {/* State change form */}
@@ -666,6 +688,40 @@ const MainPage: React.FC = () => {
                 )}
               </div>
             )}
+
+            {/* Resolve Requirement form */}
+            {activeTab === 'resolve' && requirements[0]?.requirement_status !== "Resolved" && (
+              <div>
+                <div className="mb-4">
+                  <label htmlFor="resolution-details" className="block mb-2 font-medium">
+                    Resolution Details:
+                  </label>
+                  <textarea
+                    id="resolution-details"
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
+                    placeholder="Provide details about how this requirement was resolved..."
+                    value={resolutionDetails}
+                    onChange={handleResolutionChange}
+                    disabled={isUpdating}
+                  ></textarea>
+                </div>
+                
+                <button
+                  onClick={handleResolveRequirement}
+                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300 disabled:bg-gray-400"
+                  disabled={!resolutionDetails.trim() || isUpdating}
+                >
+                  {isUpdating ? "Resolving..." : "Resolve Requirement"}
+                </button>
+                
+                {/* Success message */}
+                {updateSuccess !== null && (
+                  <div className="mt-3 p-2 bg-green-100 text-green-700 rounded-md">
+                    {updateSuccess ? "Requirement successfully marked as resolved!" : "Failed to resolve requirement."}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -677,16 +733,17 @@ const MainPage: React.FC = () => {
       <table
       
               key=
-              {index} style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              {index} style={{ width: "80%", maxWidth: "700px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
                 <tr>
                   <td
                     style={{
-                      padding: "20px",
+                      padding: "10px 15px",
                       border: "1px solid #ccc",
-                      width: "200px", // First column takes less space
+                      width: "140px",
                       fontWeight: "bold",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     First Name, Last Name
@@ -695,7 +752,7 @@ const MainPage: React.FC = () => {
                     style={{
                       padding: "10px",
                       border: "1px solid #ccc",
-                      width: "100%",
+                      width: "400px",
                     }}
                   >
                  {u.name} {u.last_name_1}
@@ -704,10 +761,11 @@ const MainPage: React.FC = () => {
                 <tr>
                 <td
                   style={{
-                    padding: "20px",
+                    padding: "10px 15px",
                     border: "1px solid #ccc",
-                    width: "200px", // First column takes less space
+                    width: "140px",
                     fontWeight: "bold",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   Role or Position
@@ -716,7 +774,7 @@ const MainPage: React.FC = () => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
+                    width: "400px",
                   }}
                 > 
                   {u.rol}
@@ -725,10 +783,11 @@ const MainPage: React.FC = () => {
               <tr>
                 <td
                   style={{
-                    padding: "20px",
+                    padding: "10px 15px",
                     border: "1px solid #ccc",
-                    width: "200px", // First column takes less space
+                    width: "140px",
                     fontWeight: "bold",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   Phone Number and Extension
@@ -737,7 +796,7 @@ const MainPage: React.FC = () => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
+                    width: "400px",
                   }}
                 >
                 {u.cel_1}  
@@ -746,10 +805,11 @@ const MainPage: React.FC = () => {
               <tr>
                 <td
                   style={{
-                    padding: "20px",
+                    padding: "10px 15px",
                     border: "1px solid #ccc",
-                    width: "200px", // First column takes less space
+                    width: "140px",
                     fontWeight: "bold",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   Email Address
@@ -758,7 +818,7 @@ const MainPage: React.FC = () => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
+                    width: "400px",
                   }}
                 >
                   {u.email}
@@ -775,7 +835,7 @@ const MainPage: React.FC = () => {
           
           <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Brief Description of the Requirement</h1>
               <table
-              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              style={{ width: "80%", maxWidth: "700px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
                 <tr>
@@ -794,7 +854,7 @@ const MainPage: React.FC = () => {
 
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Detailed Description of the Requirement</h1>
               <table
-              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              style={{ width: "80%", maxWidth: "700px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
                 <tr>
@@ -812,7 +872,7 @@ const MainPage: React.FC = () => {
               </table>
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Current Status</h1>
               <table
-              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              style={{ width: "80%", maxWidth: "700px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
                 <tr>
@@ -838,9 +898,9 @@ const MainPage: React.FC = () => {
               {u.exist_workarounds !== "Yes" && u.exist_workarounds !== "No" && <p>R/ Not applicable.</p>}
       
               
-              <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> If you have selected ‘Yes’ for the above question (Q2) then please describe workaround(s) in the box provided below:</h1>
+              <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> If you have selected 'Yes' for question (Q2), describe workaround(s):</h1>
               <table
-              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              style={{ width: "80%", maxWidth: "700px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
                 <tr>
@@ -860,7 +920,7 @@ const MainPage: React.FC = () => {
 
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Business Goals or Objectives of the Request</h1>
               <table
-              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              style={{ width: "80%", maxWidth: "700px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
                 <tr>
@@ -879,7 +939,7 @@ const MainPage: React.FC = () => {
 
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Reporting or Data Requirements</h1>
               <table
-              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              style={{ width: "80%", maxWidth: "700px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
                 <tr>
@@ -898,7 +958,7 @@ const MainPage: React.FC = () => {
 
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> List Dependencies (if any)</h1>
               <table
-              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              style={{ width: "80%", maxWidth: "700px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
                 <tr>
@@ -920,16 +980,17 @@ const MainPage: React.FC = () => {
                 <div key={index2}>
               
               <table
-              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              style={{ width: "80%", maxWidth: "700px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
               <tr>
                   <td
                     style={{
-                      padding: "40px",
+                      padding: "10px 15px",
                       border: "1px solid #ccc",
-                      width: "300px", // First column takes less space
+                      width: "140px",
                       fontWeight: "bold",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     First Name, Last Name
@@ -938,7 +999,7 @@ const MainPage: React.FC = () => {
                     style={{
                       padding: "10px",
                       border: "1px solid #ccc",
-                      width: "100%",
+                      width: "400px",
                     }}
                   >
                  {k.first_name} {k.last_name}
@@ -947,10 +1008,11 @@ const MainPage: React.FC = () => {
                 <tr>
                 <td
                   style={{
-                    padding: "20px",
+                    padding: "10px 15px",
                     border: "1px solid #ccc",
-                    width: "200px", // First column takes less space
+                    width: "140px",
                     fontWeight: "bold",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   Role or Position
@@ -959,7 +1021,7 @@ const MainPage: React.FC = () => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
+                    width: "400px",
                   }}
                 > 
                   {k.role}
@@ -968,10 +1030,11 @@ const MainPage: React.FC = () => {
               <tr>
                 <td
                   style={{
-                    padding: "20px",
+                    padding: "10px 15px",
                     border: "1px solid #ccc",
-                    width: "200px", // First column takes less space
+                    width: "140px",
                     fontWeight: "bold",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   Phone Number
@@ -980,7 +1043,7 @@ const MainPage: React.FC = () => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
+                    width: "400px",
                   }}
                 >
                 {k.phone}  
@@ -989,10 +1052,11 @@ const MainPage: React.FC = () => {
               <tr>
                 <td
                   style={{
-                    padding: "20px",
+                    padding: "10px 15px",
                     border: "1px solid #ccc",
-                    width: "200px", // First column takes less space
+                    width: "140px",
                     fontWeight: "bold",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   Email Address
@@ -1001,7 +1065,7 @@ const MainPage: React.FC = () => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
+                    width: "400px",
                   }}
                 >
                   {k.email}
@@ -1016,16 +1080,17 @@ const MainPage: React.FC = () => {
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Contact Information for the Business Administrator (Functional Unit Manager)</h1>
               <table
               key=
-              {index} style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              {index} style={{ width: "80%", maxWidth: "700px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
                 <tr>
                   <td
                     style={{
-                      padding: "40px",
+                      padding: "10px 15px",
                       border: "1px solid #ccc",
-                      width: "300px", // First column takes less space
+                      width: "140px",
                       fontWeight: "bold",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     First Name, Last Name, Middle Initial
@@ -1034,7 +1099,7 @@ const MainPage: React.FC = () => {
                     style={{
                       padding: "10px",
                       border: "1px solid #ccc",
-                      width: "100%",
+                      width: "400px",
                     }}
                   >
                  {u.contact_first_name} {u.contact_last_name}
@@ -1043,10 +1108,11 @@ const MainPage: React.FC = () => {
                 <tr>
                 <td
                   style={{
-                    padding: "20px",
+                    padding: "10px 15px",
                     border: "1px solid #ccc",
-                    width: "200px", // First column takes less space
+                    width: "140px",
                     fontWeight: "bold",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   Role or Position
@@ -1055,7 +1121,7 @@ const MainPage: React.FC = () => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
+                    width: "400px",
                   }}
                 > 
                   {u.contact_role}
@@ -1064,10 +1130,11 @@ const MainPage: React.FC = () => {
               <tr>
                 <td
                   style={{
-                    padding: "20px",
+                    padding: "10px 15px",
                     border: "1px solid #ccc",
-                    width: "200px", // First column takes less space
+                    width: "140px",
                     fontWeight: "bold",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   Phone Number and Extension
@@ -1076,7 +1143,7 @@ const MainPage: React.FC = () => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
+                    width: "400px",
                   }}
                 >
                 {u.contact_phone}  
@@ -1085,10 +1152,11 @@ const MainPage: React.FC = () => {
               <tr>
                 <td
                   style={{
-                    padding: "20px",
+                    padding: "10px 15px",
                     border: "1px solid #ccc",
-                    width: "200px", // First column takes less space
+                    width: "140px",
                     fontWeight: "bold",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   Email Address
@@ -1097,7 +1165,7 @@ const MainPage: React.FC = () => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
+                    width: "400px",
                   }}
                 >
                   {u.contact_email}
@@ -1109,7 +1177,7 @@ const MainPage: React.FC = () => {
 
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}>Communication Strategy</h1>
               <table
-              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              style={{ width: "80%", maxWidth: "700px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
                 <tr>
@@ -1128,7 +1196,7 @@ const MainPage: React.FC = () => {
 
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}>Supporting_documents</h1>
               <table
-              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              style={{ width: "80%", maxWidth: "700px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
                 <tr>
@@ -1149,77 +1217,51 @@ const MainPage: React.FC = () => {
               ))}
 
        
-      <div style={{ display: "flex", flexDirection: "column"}} className="text-black">
+      <div style={{ display: "flex", flexDirection: "column", maxWidth: "700px", width: "80%", marginLeft: "0" }} className="text-black">
           {/* Main Content */}
-          <div style={{ padding: "40px", fontFamily: "Arial, sans-serif" }}>
-            <h2 style={{ fontSize: "30px", fontWeight: "bold", textAlign: "center" }}>
+          <div>
+            <h1 style={{ fontSize: "24px", fontWeight: "bold", marginTop: "30px", marginBottom: "20px" }}>
               Workflow
-            </h2>
-      </div>
-        {flows.length > 0 && flows.map((u, index) => (
-              <ul key={index} className="border-t-4 border-gray-200 dark:border-gray-700">
-                <p><li className="px-4 py-2"><b>Time of Advance:</b> {u.time_of_update}</li></p>
-                <li className="px-4 py-2"><b>Description:</b> {u.brief_description}</li>
-                <li className="px-4 py-2"><b>Progress Made By:</b> {u.manager_id}</li>
-                <li className="px-4 py-2"><b>Current Status:</b> {u.process_type}</li>
-                <li className="px-4 py-2"><b>Reporter ID:</b> {u.submitter_id}</li>
-
-              </ul> 
-           ))}
-          {flows.length === 0 && 
-            <ul className="border-t border-black-200 dark:border-black-700">
-              <li className="px-4 py-2">No records available. </li>
-            </ul> 
-        }
-      </div>
-
-      {(isAdmin || isITSupport) && isAssignedToMe && requirements[0]?.requirement_status !== "Resolved" && (
-      <div className="mt-4">
-        {updateSuccess !== null && (
-          <div className={`mx-4 p-3 rounded ${updateSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-            {updateSuccess ? "Requirement successfully marked as resolved!" : "Failed to update status."}
+            </h1>
           </div>
-        )}
-        {!showResolutionForm ? (
-          <button
-            onClick={() => setShowResolutionForm(true)}
-            className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
-          >
-            Resolve Requirement
-          </button>
-        ) : (
-          <div className="bg-gray-50 p-4 rounded-md border border-gray-200 mb-4">
-            <label htmlFor="resolution-details" className="block text-black font-medium mb-2">
-              Resolution Details
-            </label>
-            <textarea
-              id="resolution-details"
-              value={resolutionDetails}
-              onChange={(e) => setResolutionDetails(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
-              rows={4}
-            />
-            <div className="flex justify-end space-x-3 mt-3">
-              <button
-                onClick={() => setShowResolutionForm(false)}
-                className="bg-white text-gray-700 px-4 py-2 rounded-md border border-gray-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleResolveRequirement}
-                disabled={isUpdating || !resolutionDetails.trim()}
-                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50"
-              >
-                {isUpdating ? "Updating..." : "Submit & Resolve"}
-              </button>
+          
+          {flows.length > 0 ? (
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <tbody>
+                {flows.map((u, index) => (
+                  <React.Fragment key={index}>
+                    <tr className="border-t-2 border-gray-200">
+                      <td style={{ padding: "10px 15px", fontWeight: "bold" }}>Time of Advance:</td>
+                      <td style={{ padding: "10px" }}>{u.time_of_update}</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: "10px 15px", fontWeight: "bold" }}>Description:</td>
+                      <td style={{ padding: "10px" }}>{u.brief_description}</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: "10px 15px", fontWeight: "bold" }}>Progress Made By:</td>
+                      <td style={{ padding: "10px" }}>{u.manager_id}</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: "10px 15px", fontWeight: "bold" }}>Current Status:</td>
+                      <td style={{ padding: "10px" }}>{u.process_type}</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: "10px 15px", fontWeight: "bold" }}>Reporter ID:</td>
+                      <td style={{ padding: "10px" }}>{u.submitter_id}</td>
+                    </tr>
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="border-t border-gray-200 py-4 px-2">
+              No records available.
             </div>
-          </div>
-        )}
+          )}
       </div>
-    )}
 
-          <div className="mt-4">
+          <div className="mt-4" style={{ width: "80%", maxWidth: "700px" }}>
             <button
             onClick={()=>handleRouter()}
             className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
