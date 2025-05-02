@@ -25,12 +25,17 @@ const GroupInfoPage: React.FC = () => {
     const fetchAddableUsers = async () => {
         const allUsers = await getAdminsData() as [any, string][];
         const currentMemberDocIds = groupData.members || [];
+    
         const filtered = allUsers.filter(([userData, docId]) =>
+            userData.rol &&
+            userData.rol[0] !== "No access" && // Exclude "No access" users
             !currentMemberDocIds.includes(docId) &&
             !newMemberDocIds.includes(docId)
         );
+    
         setAddableUsers(filtered);
     };
+    
 
     const handleSaveChanges = async () => {
         if (!groupData || (removedDocIds.length === 0 && newMemberDocIds.length === 0)) return;
@@ -121,6 +126,12 @@ const GroupInfoPage: React.FC = () => {
           if (!docSnap.exists()) return;
           const group = docSnap.data();
           setGroupData(group);
+
+          // reset lists in case the user navigated back
+            setRemovedDocIds([]);
+            setNewMemberDocIds([]);
+            setShowAddSection(false);
+            setSearchQuery("");
     
           // fetch member names and other info in parallel
           const memberDataResults = await Promise.all(
