@@ -398,6 +398,11 @@ useEffect(() => {
   const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEscalationComment(e.target.value);
   };
+
+  // Handle resolution comment change
+  const handleResolutionCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setResolutionDetails(e.target.value);
+  };
   
   // Handle state change
   const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -604,6 +609,12 @@ useEffect(() => {
               >
                 Escalate Incident
               </button>
+              <button 
+                className={`py-2 px-4 ${activeTab === 'resolve' ? 'border-b-2 border-blue-600 font-medium' : 'text-gray-500'}`}
+                onClick={() => setActiveTab('resolve')}
+              >
+                Resolve
+              </button>
             </div>
             
             {/* State change form */}
@@ -615,7 +626,8 @@ useEffect(() => {
                   </label>
                   <select
                     id="stateSelect"
-                    className="w-full md:w-1/2 lg:w-1/3 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-64 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style={{ maxWidth: "250px" }}
                     onChange={handleStateChange}
                     value={selectedState}
                     disabled={isChangingState}
@@ -655,7 +667,7 @@ useEffect(() => {
                   </label>
                   <select
                     id="escalationSelect"
-                    className="w-full md:w-1/2 lg:w-1/3 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full md:w-1/3 lg:w-1/4 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     onChange={handleEscalationChange}
                     value={selectedEscalationUser || ""}
                     disabled={isEscalating}
@@ -675,7 +687,7 @@ useEffect(() => {
                   </label>
                   <textarea
                     id="escalationComment"
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
+                    className="w-full md:w-1/2 lg:w-1/3 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
                     placeholder="Provide details about why you are escalating this incident..."
                     onChange={handleCommentChange}
                     value={escalationComment}
@@ -699,6 +711,40 @@ useEffect(() => {
                 )}
               </div>
             )}
+
+            {/* Resolve tab */}
+            {activeTab === 'resolve' && (
+              <div>
+                <div className="mb-4">
+                  <label htmlFor="resolutionComment" className="block mb-2 font-medium">
+                    Resolution details:
+                  </label>
+                  <textarea
+                    id="resolutionComment"
+                    className="w-full md:w-1/2 lg:w-1/3 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
+                    placeholder="Provide details about how this incident was resolved..."
+                    onChange={handleResolutionCommentChange}
+                    value={resolutionDetails}
+                    disabled={isUpdating}
+                  ></textarea>
+                </div>
+                
+                <button
+                  onClick={handleResolveIncident}
+                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300 disabled:bg-gray-400"
+                  disabled={!resolutionDetails.trim() || isUpdating}
+                >
+                  {isUpdating ? "Resolving..." : "Resolve Incident"}
+                </button>
+                
+                {/* Success message */}
+                {updateSuccess && (
+                  <div className="mt-3 p-2 bg-green-100 text-green-700 rounded-md">
+                    Incident successfully resolved!
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
     
@@ -708,7 +754,7 @@ useEffect(() => {
         <div key={index}>
            <b>Incident Ticket Number:</b> {u.incident_id}
               <table
-              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              style={{ width: "75%", maxWidth: "900px", borderCollapse: "collapse", marginTop: "20px", marginLeft: "0" }}
             >
               <tbody>
                 <tr>
@@ -726,7 +772,6 @@ useEffect(() => {
                     style={{
                       padding: "10px",
                       border: "1px solid #ccc",
-                      width: "100%",
                     }}
                   >
                   {u.organization}
@@ -747,7 +792,6 @@ useEffect(() => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   {u.department}
@@ -768,7 +812,6 @@ useEffect(() => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   {u.section}
@@ -785,7 +828,7 @@ useEffect(() => {
             > 
         <h3 style={{ marginTop: "20px", fontWeight: "bold" }}>Incident Details</h3>
         <table
-          style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+          style={{ width: "75%", maxWidth: "900px", borderCollapse: "collapse", marginTop: "20px", marginLeft: "0" }}
         >
           <tbody>
             <tr key={index}>
@@ -803,7 +846,6 @@ useEffect(() => {
                     style={{
                       padding: "10px",
                       border: "1px solid #ccc",
-                      width: "100%",
                     }}
                   >
                   {u.user_details}
@@ -824,7 +866,6 @@ useEffect(() => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   {reporter}
@@ -845,7 +886,6 @@ useEffect(() => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   {u.description}
@@ -866,7 +906,6 @@ useEffect(() => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   {u.business_impact}
@@ -887,7 +926,6 @@ useEffect(() => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   {u.root_cause}
@@ -908,7 +946,6 @@ useEffect(() => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   {u.incident_status}
@@ -929,7 +966,6 @@ useEffect(() => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   {u.incident_logged}
@@ -950,7 +986,6 @@ useEffect(() => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   {assignedTo}
@@ -963,7 +998,7 @@ useEffect(() => {
         Incident Date and Time
       </h3>
       <table
-        style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}
+        style={{ width: "75%", maxWidth: "900px", borderCollapse: "collapse", marginTop: "10px", marginLeft: "0" }}
       >
         <tbody>
         <tr>
@@ -982,7 +1017,6 @@ useEffect(() => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   {u.incident_start_date}
@@ -1004,7 +1038,6 @@ useEffect(() => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   {u.incident_report_date}
@@ -1026,7 +1059,6 @@ useEffect(() => {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}
                 >
                   {u.incident_resolution_date.substring(0,4) === "1900" && "N/A"}
@@ -1042,14 +1074,13 @@ useEffect(() => {
         </h3>
       )}
       <table
-       style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}
+       style={{ width: "75%", maxWidth: "900px", borderCollapse: "collapse", marginTop: "10px", marginLeft: "0" }}
       >
         <tbody>
           <tr>
             <td style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
                   }}>
               {u.additional_details}
             </td>
@@ -1081,63 +1112,7 @@ useEffect(() => {
           </ul> 
       }
     </div>
-      {/* Resolution form for IT support users */}
-      {canResolveIncident() && (
-        <div className="mt-4">
-             
-        {/* Display status update message */}
-      {updateSuccess !== null && (
-        <div className={`mx-4 p-3 rounded ${updateSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-          {updateSuccess 
-            ? "Incident successfully marked as resolved!" 
-            : "Failed to update incident status. Please try again."}
-        </div>
-      )}
-          {!showResolutionForm ? (
-            <p className="mb-4"> 
-              <button
-                onClick={handleShowResolutionForm}
-                className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                type="button"
-              >
-                Resolve Incident
-              </button>
-            </p>
-          ) : (
-            <div className="bg-gray-50 p-4 rounded-md border border-gray-200 mb-4">
-              <label htmlFor="resolution-details" className="block text-black font-medium mb-2">
-                Resolution Details
-              </label>
-              <textarea
-                id="resolution-details"
-                value={resolutionDetails}
-                onChange={(e) => setResolutionDetails(e.target.value)}
-                placeholder="Please provide details about how this incident was resolved..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-black"
-                rows={4}
-                required
-              />
-              <div className="flex justify-end space-x-3 mt-3">
-                <button
-                  onClick={() => setShowResolutionForm(false)}
-                  className="bg-white text-gray-700 px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                  type="button"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleResolveIncident}
-                  disabled={isUpdating || !resolutionDetails.trim()}
-                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  type="button"
-                >
-                  {isUpdating ? "Updating..." : "Submit & Resolve"}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Resolution form for IT support users - this is now moved to the tab above */}
       <p className="mb-4"> 
             <button
             onClick={()=>handleRouter()}
