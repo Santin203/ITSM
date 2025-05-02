@@ -5,17 +5,11 @@ import { getAllGroups, getUserDatawithDocId } from "../../../../hooks/db";
 type Group = {
     id: number;
     name: string;
-    members: string[]; // still doc IDs internally
-};
-
-type DisplayGroup = {
-    id: number;
-    name: string;
     memberNames: string[];
 };
 
 const ViewGroupsPage: React.FC = () => {
-    const [groups, setGroups] = useState<DisplayGroup[]>([]);
+    const [groups, setGroups] = useState<Group[]>([]);
     const [formData, setFormData] = useState({ name: "", memberName: "" });
 
     const fetchGroups = async () => {
@@ -57,6 +51,12 @@ const ViewGroupsPage: React.FC = () => {
             member.toLowerCase().includes(formData.memberName.toLowerCase())
         ))
     );
+
+    // for redirecting to groupinfo
+    const handleGroupClick = (groupId: number) => {
+        localStorage.setItem("group_id", groupId.toString());
+        window.location.href = "viewgroups/groupinfo";
+    };      
 
     useEffect(() => {
         fetchGroups();
@@ -102,9 +102,10 @@ const ViewGroupsPage: React.FC = () => {
                 <table className="min-w-full">
                     <thead>
                         <tr>
-                            <th className="px-4 py-2 text-left">Group Name</th>
-                            <th className="px-4 py-2 text-left">Group ID</th>
-                            <th className="px-4 py-2 text-left">Number of Members</th>
+                            <th className="px-4 py-2 text-center font-bold">Group Name</th>
+                            <th className="px-4 py-2 text-center font-bold">Group ID</th>
+                            <th className="px-4 py-2 text-center font-bold">Number of Members</th>
+                            <th className="px-4 py-2 text-center font-bold">Details</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -112,8 +113,17 @@ const ViewGroupsPage: React.FC = () => {
                         <React.Fragment key={index}>
                             <tr className="border-t">
                                 <td className="px-4 py-2">{group.name}</td>
-                                <td className="px-4 py-2">{group.id}</td>
-                                <td className="px-4 py-2">{group.memberNames?.length ?? 0}</td>
+                                <td className="px-4 py-2 text-center">{group.id}</td>
+                                <td className="px-4 py-2 text-center">{group.memberNames?.length ?? 0}</td>
+                                <td className="px-4 py-2">
+                                    <button
+                                    onClick={() => handleGroupClick(group.id)}
+                                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                                    type="button"
+                                    >
+                                        More
+                                    </button> 
+                                </td>
                             </tr>
                             <tr className="border-b">
                                 <td colSpan={3} className="px-4 py-2 text-sm text-gray-600">
