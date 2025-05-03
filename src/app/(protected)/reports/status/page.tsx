@@ -160,6 +160,15 @@ const StatusReportPage: React.FC = () => {
   const calculatePieSegments = () => {
     let currentAngle = 0;
     
+    // For a single status, we need to ensure we draw a full circle
+    if (statusCounts.length === 1) {
+      return [{
+        ...statusCounts[0],
+        startAngle: 0,
+        angle: 360
+      }];
+    }
+    
     return statusCounts.map((status, index) => {
       const startAngle = currentAngle;
       const angle = (status.percentage / 100) * 360;
@@ -181,7 +190,23 @@ const StatusReportPage: React.FC = () => {
     angle: number,
     radius: number
   ) => {
-    // Calculate the SVG path for a pie segment
+    // For a complete circle (360 degrees), we need special handling
+    if (angle === 360) {
+      return (
+        <circle
+          key={status}
+          cx="100"
+          cy="100"
+          r={radius}
+          fill={color}
+          stroke="#fff"
+          strokeWidth="1"
+          data-status={status}
+        />
+      );
+    }
+    
+    // Regular segment calculation for non-complete circles
     const startRad = (startAngle - 90) * Math.PI / 180; // -90 to start at top
     const endRad = (startAngle + angle - 90) * Math.PI / 180;
     
