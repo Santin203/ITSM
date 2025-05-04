@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { getCookie } from '../../../hooks/cookies';
-import { getCurrUserRequirementsData, getITUserRequirementsData, getCurrGroupRequirementsData } from '../../../hooks/db.js';
+import { getCurrUserRequirementsData, getITUserRequirementsData, getCurrGroupRequirementsData, setAssignedToTicket, getCurrUserId } from '../../../hooks/db.js';
 type Requirement = {
   submitter_id:number,
   requirement_submit_date:string,
@@ -223,6 +223,48 @@ const MainPage: React.FC = () => {
     });
   };
 
+  const successBox = (): boolean => {
+    const confirmUpdate = confirm("Confirm changes?");
+    return(confirmUpdate);
+    }
+
+
+  const handleClaim = async(assignedCurrent: number, ticketDocID:string, reporterID: number) => {    
+      const curr_id = await getCurrUserId();
+    if(curr_id === assignedCurrent)
+      return 0;
+    else{
+      if(curr_id === reporterID)
+      {
+        alert("A reporter can not be assigned its own ticket.");
+      }
+      else{
+      try {  
+        const confirmation = successBox();
+        if(confirmation === true)
+        {
+        
+          const response = await setAssignedToTicket(curr_id, ticketDocID, "Requirement");
+          if(response === 0)
+          {
+            alert("Information Updated!");
+            window.location.href = "/trackrequirements";
+            return
+          } 
+          else
+            alert("An error occurred.");
+        }
+        else
+            alert("No change was made.");
+        //handleFetchAll();
+      }
+      catch (err) {
+          console.error("Error updating information:", err);
+      }
+    }
+    }
+    window.location.reload();
+    }
   // Get the appropriate page title based on filter selection
   const getPageTitle = () => 
   {
@@ -272,6 +314,8 @@ const MainPage: React.FC = () => {
       default: return "bg-white";
     }
   };
+
+
 
   if (!roleChecked) return <div className="text-black p-4">Loading...</div>; // Prevent render until role is known
 
@@ -405,6 +449,7 @@ const MainPage: React.FC = () => {
                         </th>
                         <th className="px-4 py-2 text-left">Status</th>
                         <th className="px-4 py-2 text-left">Submitter ID</th>
+                        {statusGroup === "Group" && <th className="px-4 py-2 text-left">Claim</th>}
                         <th className="px-4 py-2 text-left">Actions</th>
                       </tr>
                     </thead>
@@ -421,6 +466,15 @@ const MainPage: React.FC = () => {
                   <td className="px-4 py-2">{String(u.requirement_submit_date)}</td>
                   <td className="px-4 py-2">{u.requirement_status}</td>
                   <td className="px-4 py-2">{u.submitter_id}</td>
+                  {statusGroup === "Group" &&<td className="px-4 py-2">
+                                  <button
+                                    onClick={() => handleClaim(u.assigned_to_id, u.docId, u.submitter_id)}
+                                    className="w-full bg-red-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                                    type="button"
+                                  >
+                                    Claim
+                                  </button>
+                                </td>}
                   <td className="px-4 py-2">
                           
                           <button
