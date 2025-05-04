@@ -937,6 +937,17 @@ export async function addGroupToUser(firebaseid, groupid)
   });
 }
 
+export async function getUserDatawithDocId(docId) {
+  try {
+    const userDoc = await getDoc(doc(db, "Users", docId));
+    return userDoc.exists() ? userDoc.data() : null;
+  } catch (error) {
+    console.error("Error fetching user by docId:", error);
+    return null;
+  }
+}
+
+
 
 export async function  getUnassignedRequirementsData()
 {

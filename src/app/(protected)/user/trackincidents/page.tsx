@@ -364,7 +364,7 @@ const MainPage: React.FC = () => {
       case "Escalated": return "bg-red-50";
       case "In Progress": return "bg-blue-50";
       case "Assigned": return "bg-yellow-50";
-      case "Sent": return "bg-black-50";
+      case "Sent": return "bg-gray-50";
       case "Resolved": return "bg-green-50";
       default: return "bg-white";
     }

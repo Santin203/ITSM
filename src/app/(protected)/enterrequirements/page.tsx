@@ -219,7 +219,7 @@ export default function IncidentEntryPage() {
   return (
     <form onSubmit={handleSubmit}>
       <fieldset>
-          <div style={{ display: "flex", flexDirection: "column"}} className="text-black">
+          <div style={{ display: "flex", flexDirection: "column", maxWidth: "800px", marginLeft: "40px" }} className="text-black">
           {/* Main Content */}
           <div>
             <h2 style={{ fontSize: "20px", fontWeight: "bold", color:"navy", textAlign: "center" }}>
@@ -229,6 +229,7 @@ export default function IncidentEntryPage() {
           <div
           style={{
             marginTop: "20px",
+            marginBottom: "25px",
             fontSize: "18px",
             fontWeight: "bold",
           }}
@@ -236,7 +237,7 @@ export default function IncidentEntryPage() {
           Requirement Ticket No: {incidentNumber}
         </div>
           
-      <table>
+      <table style={{ maxWidth: "800px" }}>
               <tbody>
                 <tr>
                   <td
@@ -253,7 +254,7 @@ export default function IncidentEntryPage() {
                     style={{
                       padding: "10px",
                       border: "1px solid #ccc",
-                      width: "100%",
+                      width: "600px",
                     }}
                   >
                 {reportedBy}
@@ -274,7 +275,7 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
+                    width: "600px",
                   }}
                 > 
                   {user_rol}
@@ -295,7 +296,7 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
+                    width: "600px",
                   }}
                 >
                 {user_cel1}
@@ -316,7 +317,7 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
+                    width: "600px",
                   }}
                 >
                   {user_email}
@@ -330,7 +331,7 @@ export default function IncidentEntryPage() {
           
           <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Brief Description of the Requirement</h1>
               <table
-              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              style={{ width: "100%", maxWidth: "800px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
                 <tr>
@@ -358,7 +359,7 @@ export default function IncidentEntryPage() {
 
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Detailed Description of the Requirement</h1>
               <table
-              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              style={{ width: "100%", maxWidth: "800px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
                 <tr>
@@ -390,7 +391,7 @@ export default function IncidentEntryPage() {
                 name="statuss"
                 value={statuss}
                 className="text-black border rounded px-4 py-2 mb-4 w-medium"
-                style={{ width: "100%" }}
+                style={{ width: "100%", maxWidth: "800px" }}
                 readOnly
               />
               
@@ -402,6 +403,7 @@ export default function IncidentEntryPage() {
                     value={process_type}
                     onChange={(e) => setProcessType(e.target.value)}
                     className="dark:text-black border rounded px-3 py-2 mb-4 w-full"
+                    style={{ maxWidth: "800px" }}
                   >
                     <option value="" disabled>Select Type</option>
                     <option value ="New">New</option>
@@ -416,15 +418,16 @@ export default function IncidentEntryPage() {
                     value={exist_workarounds}
                     onChange={(e) => setWorks(e.target.value)}
                     className="dark:text-black border rounded px-3 py-2 mb-4 w-full"
+                    style={{ maxWidth: "800px" }}
                   >
                     <option value="" disabled>Exist Workarounds</option>
                     <option value = "Yes">Yes</option>
                     <option value="No">No</option>
               </select>
               
-              <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> If you have selected ‘Yes’ for the above previous question then please describe workaround(s) in the box provided below:</h1>
+              <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> If you have selected 'Yes' for the above previous question then please describe workaround(s) in the box provided below:</h1>
               <table
-              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              style={{ width: "100%", maxWidth: "800px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
                 <tr>
@@ -451,7 +454,7 @@ export default function IncidentEntryPage() {
 
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Business Goals or Objectives of the Request</h1>
               <table
-              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              style={{ width: "100%", maxWidth: "800px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
                 <tr>
@@ -479,7 +482,7 @@ export default function IncidentEntryPage() {
 
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Reporting or Data Requirements</h1>
               <table
-              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              style={{ width: "100%", maxWidth: "800px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
                 <tr>
@@ -507,7 +510,7 @@ export default function IncidentEntryPage() {
 
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> List Dependencies (if any)</h1>
               <table
-              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              style={{ width: "100%", maxWidth: "800px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
                 <tr>
@@ -536,7 +539,7 @@ export default function IncidentEntryPage() {
               {inputs.map((input, index) => (
         <div key={index}>
           <table
-              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              style={{ width: "100%", maxWidth: "800px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
               <tr>
@@ -554,7 +557,7 @@ export default function IncidentEntryPage() {
                     style={{
                       padding: "10px",
                       border: "1px solid #ccc",
-                      width: "100%",
+                      width: "600px",
                     }}
                   >
                     <input
@@ -585,7 +588,7 @@ export default function IncidentEntryPage() {
                     style={{
                       padding: "10px",
                       border: "1px solid #ccc",
-                      width: "100%",
+                      width: "600px",
                     }}
                   >
                     <input
@@ -615,7 +618,7 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
+                    width: "600px",
                   }}
                 > 
                   <input
@@ -644,7 +647,7 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
+                    width: "600px",
                   }}
                 >
                 <input
@@ -674,7 +677,7 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
+                    width: "600px",
                   }}
                 >
                   <input
@@ -728,7 +731,7 @@ export default function IncidentEntryPage() {
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}> Contact Information for the Business Administrator (Functional Unit Manager)</h1>
               <table
               
-               style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+               style={{ width: "100%", maxWidth: "800px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
                 <tr>
@@ -746,7 +749,7 @@ export default function IncidentEntryPage() {
                     style={{
                       padding: "10px",
                       border: "1px solid #ccc",
-                      width: "100%",
+                      width: "600px",
                     }}
                   >
                 <input
@@ -776,7 +779,7 @@ export default function IncidentEntryPage() {
                     style={{
                       padding: "10px",
                       border: "1px solid #ccc",
-                      width: "100%",
+                      width: "600px",
                     }}
                   >
                 <input
@@ -806,7 +809,7 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
+                    width: "600px",
                   }}
                 > 
                   <input
@@ -836,7 +839,7 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
+                    width: "600px",
                   }}
                 >
                 <input
@@ -866,7 +869,7 @@ export default function IncidentEntryPage() {
                   style={{
                     padding: "10px",
                     border: "1px solid #ccc",
-                    width: "100%",
+                    width: "600px",
                   }}
                 >
                   <input
@@ -887,7 +890,7 @@ export default function IncidentEntryPage() {
 
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}>Communication Strategy</h1>
               <table
-              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              style={{ width: "100%", maxWidth: "800px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
                 <tr>
@@ -915,7 +918,7 @@ export default function IncidentEntryPage() {
 
               <h1 style={{ marginTop: "20px", fontWeight: "bold" }}>Supporting_documents</h1>
               <table
-              style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+              style={{ width: "100%", maxWidth: "800px", borderCollapse: "collapse", marginTop: "20px" }}
             >
               <tbody>
                 <tr>
