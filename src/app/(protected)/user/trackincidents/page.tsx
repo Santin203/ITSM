@@ -25,7 +25,6 @@ const MainPage: React.FC = () => {
   const [uid, setUid] = useState("");
   const [incidents, setIncidents] = useState<Incident>([]);
   const [groupRequirements, setGroupRequirements] = useState<Incident>([]);
-  const [groupByGroup, setGroupByGroup] = useState(true); // New state for grouping
   const [order, setOrder] = useState<Order>({
     'title': 0,
     'incident_status': 0,
@@ -38,7 +37,6 @@ const MainPage: React.FC = () => {
   const [isITSupport, setIsITSupport] = useState(false);
   const [incidentTypeFilter, setIncidentTypeFilter] = useState("all"); // "all", "sent", or "received"
   const [roleChecked, setRoleChecked] = useState(false);// Wait for role to be determined
-  const [groupByStatus, setGroupByStatus] = useState(true); // New state for grouping
   const [groupChecked, setGroupChecked] = useState("group_status");// Wait for role to be determined
 
   const [formData, setFormData] = useState({
@@ -219,7 +217,7 @@ const MainPage: React.FC = () => {
   });
 
   // Group incidents by status
-  const groupedIncidents = groupByStatus ? 
+  const groupedIncidents = (groupChecked === "group_status") ? 
     sortedIncidents.reduce<Record<string, any[]>>((groups, incident) => {
       const status = incident.incident_status;
       if (!groups[status]) {
@@ -231,7 +229,7 @@ const MainPage: React.FC = () => {
     {};
 
   // Order the status groups by priority
-  const orderedStatusGroups = groupByStatus ? 
+  const orderedStatusGroups = (groupChecked === "group_status") ? 
     Object.keys(groupedIncidents).sort((a, b) => {
       return (statusOrder[a] || 999) - (statusOrder[b] || 999);
     }) : 
@@ -254,7 +252,7 @@ const MainPage: React.FC = () => {
   
   
     // Group incidents by status
-    const groupedReqs = groupByGroup ? 
+    const groupedReqs = (groupChecked === "group_group" )? 
     sortedGroupRequirements.reduce<Record<string, any[]>>((groups, requirement) => {
       const group = (Number(requirement.assigned_to_id) < -1) ? "Group" : "Personal";
       if (!groups[group]) {
@@ -266,7 +264,7 @@ const MainPage: React.FC = () => {
     {};
 
     // Order the status groups by priority
-  const orderedGroups = groupByGroup ? 
+  const orderedGroups = (groupChecked === "group_group" ) ? 
   Object.keys(groupedReqs).sort((a, b) => {
     return (statusOrder[a] || 999) - (statusOrder[b] || 999);
   }) : 
