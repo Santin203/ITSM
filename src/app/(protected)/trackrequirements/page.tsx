@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { getCookie } from '../../../hooks/cookies';
-import { getCurrUserRequirementsData, getITUserRequirementsData } from '../../../hooks/db.js';
+import { getCurrUserRequirementsData, getITUserRequirementsData, getCurrGroupRequirementsData, setAssignedToTicket, getCurrUserId } from '../../../hooks/db.js';
 type Requirement = {
   submitter_id:number,
   requirement_submit_date:string,
@@ -23,6 +23,7 @@ type Order = {
 const MainPage: React.FC = () => {
   const [uid, setUid] = useState("");
   const [requirements, setRequirements] = useState<Requirement>([]);
+  const [groupRequirements, setGroupRequirements] = useState<Requirement>([]);
   const [order, setOrder] = useState<Order>({requirement_id: 0, requirement_submit_date: 0, requirement_status: 0, submitter_id: 0, process_type: 0});
   const [date, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -32,6 +33,7 @@ const MainPage: React.FC = () => {
   const [isITSupport, setIsITSupport] = useState(false);
   const [requirementTypeFilter, setRequirementTypeFilter] = useState("all"); // "all", "sent", "received"
   const [roleChecked, setRoleChecked] = useState(false); // Wait for role to be determined
+  const [groupByGroup, setGroupByGroup] = useState(true); // New state for grouping
 
   // Check user role when component mounts
   useEffect(() => {
@@ -54,6 +56,7 @@ const MainPage: React.FC = () => {
           return {
             submitter_id: (u as any)[0]["submitter_id"],
             requirement_id: (u as any)[0]["requirement_id"],
+            assigned_to_id:(u as any)[0]["assigned_to_id"],
             requirement_submit_date: ((u as any)[0]["requirement_submit_date"].toDate().getFullYear()).toString()+'-'
             +((u as any)[0]["requirement_submit_date"].toDate().getMonth()+1).toString().padStart(2, "0") + '-'
             + ((u as any)[0]["requirement_submit_date"].toDate().getDate()).toString().padStart(2, "0"),
@@ -77,6 +80,7 @@ const MainPage: React.FC = () => {
           return {  
             submitter_id: (u as any)[0]["submitter_id"],
             requirement_id: (u as any)[0]["requirement_id"],
+            assigned_to_id:(u as any)[0]["assigned_to_id"],
             requirement_submit_date: ((u as any)[0]["requirement_submit_date"].toDate().getFullYear()).toString()+'-'
             +((u as any)[0]["requirement_submit_date"].toDate().getMonth()+1).toString().padStart(2, "0") + '-'
             + ((u as any)[0]["requirement_submit_date"].toDate().getDate()).toString().padStart(2, "0"),
@@ -98,6 +102,7 @@ const MainPage: React.FC = () => {
     const fetch = async(): Promise<void> => {
       if (roleChecked) {
         await handleFetchAll();
+        await handleFetchGroupRequirements();
       }
     }
 
@@ -122,11 +127,26 @@ const MainPage: React.FC = () => {
     const matchesStatus = status === "" || String(u.requirement_status) === String(status);
 
     // Filter by process type
-    const matchesProcessType = process_type === "" || String(u.process_type) === String(process_type);
-    
+    const matchesProcessType = process_type === "" || String(u.process_type) === String(process_type);process_type
     // Filter by date range
     const matchesDate = date === "" && endDate === "" || compareDates(date, u.requirement_submit_date, endDate);
+    return matchesStatus && matchesDate && matchesProcessType;
+  });
+
+  // Filtered data
+  const filteredGroupRequirements = groupRequirements.filter((u) => {
+    // Filter by requirement type if it's an admin or IT support
+    if ((isAdmin || isITSupport) && requirementTypeFilter !== "all") {
+      if (requirementTypeFilter === "sent" && u.requirementType !== "sent") return false;
+      if (requirementTypeFilter === "received" && u.requirementType !== "received") return false;
+    }
     
+    // Filter by status
+    const matchesStatus = status === "" || String(u.requirement_status) === String(status);status
+    // Filter by process type
+    const matchesProcessType = process_type === "" || String(u.process_type) === String(process_type);process_type
+    // Filter by date range
+    const matchesDate = date === "" && endDate === "" || compareDates(date, u.requirement_submit_date, endDate);
     return matchesStatus && matchesDate && matchesProcessType;
   });
   
@@ -143,6 +163,48 @@ const MainPage: React.FC = () => {
     }
     return 0;
   });
+
+
+  //console.log("f",groupRequirements)
+  // Ordenación dinámica
+  const sortedGroupRequirements = [...filteredRequirements, ...filteredGroupRequirements].sort((a, b) => {
+    for (const col in order) {
+      if (order[col as keyof Order] !== 0) {
+        if (typeof (a as any)[col] === "string" && typeof (b as any)[col] == "string") {
+          return order[col as keyof Order] * ((a as any)[col].toLowerCase() > (b as any)[col].toLowerCase() ? 1 : -1);
+        } else {
+          return order[col as keyof Order] * ((a as any)[col] > (b as any)[col] ? 1 : -1);
+        }
+      }
+    }
+    return 0;
+  });
+
+  const handleFetchGroupRequirements = async () =>{
+    const requirementsData = await getCurrGroupRequirementsData();
+      if(requirementsData) {
+        setUid("a");
+        const tasks = requirementsData.map((u) => {
+          return {  
+            submitter_id: (u as any)[0]["submitter_id"],
+            requirement_id: (u as any)[0]["requirement_id"],
+            assigned_to_id:(u as any)[0]["assigned_to_id"],
+            requirement_submit_date: ((u as any)[0]["requirement_submit_date"].toDate().getFullYear()).toString()+'-'
+            +((u as any)[0]["requirement_submit_date"].toDate().getMonth()+1).toString().padStart(2, "0") + '-'
+            + ((u as any)[0]["requirement_submit_date"].toDate().getDate()).toString().padStart(2, "0"),
+            requirement_status: (u as any)[0]["requirement_status"],
+            docId: (u as any)[1],
+            requirementType: "sent", // Since this is the current user's data, it's always "sent"
+            process_type: (u as any)[0]["process_type"]
+          }
+        }); 
+        setGroupRequirements(tasks);
+
+      } else {
+        console.log("nothing retrieved :(");
+        setGroupRequirements([]);
+      }
+  }
 
   const handleRequirement = async (requirement_id:number) =>{
     localStorage.setItem("requirement_id", requirement_id.toString());
@@ -161,8 +223,51 @@ const MainPage: React.FC = () => {
     });
   };
 
+  const successBox = (): boolean => {
+    const confirmUpdate = confirm("Confirm changes?");
+    return(confirmUpdate);
+    }
+
+
+  const handleClaim = async(assignedCurrent: number, ticketDocID:string, reporterID: number) => {    
+      const curr_id = await getCurrUserId();
+    if(curr_id === assignedCurrent)
+      return 0;
+    else{
+      if(curr_id === reporterID)
+      {
+        alert("A reporter can not be assigned its own ticket.");
+      }
+      else{
+      try {  
+        const confirmation = successBox();
+        if(confirmation === true)
+        {
+        
+          const response = await setAssignedToTicket(curr_id, ticketDocID, "Requirement");
+          if(response === 0)
+          {
+            alert("Information Updated!");
+            window.location.href = "/trackrequirements";
+            return
+          } 
+          else
+            alert("An error occurred.");
+        }
+        else
+            alert("No change was made.");
+        //handleFetchAll();
+      }
+      catch (err) {
+          console.error("Error updating information:", err);
+      }
+    }
+    }
+    window.location.reload();
+    }
   // Get the appropriate page title based on filter selection
-  const getPageTitle = () => {
+  const getPageTitle = () => 
+  {
     if (isAdmin || isITSupport) {
       if (requirementTypeFilter === "all") return "All Requirements";
       if (requirementTypeFilter === "sent") return "My Requirements";
@@ -170,6 +275,47 @@ const MainPage: React.FC = () => {
     }
     return "My Requirements";
   };
+
+   // Define status priority order
+   const statusOrder: Record<string, number> = 
+   {
+    "Group": 0,
+    "Personal": 1
+  };
+
+  //console.log(sortedGroupRequirements)
+
+    // Group incidents by status
+    const groupedReqs = groupByGroup ? 
+    sortedGroupRequirements.reduce<Record<string, any[]>>((groups, requirement) => {
+      const group = (Number(requirement.assigned_to_id) < -1) ? "Group" : "Personal";
+      if (!groups[group]) {
+          groups[group] = [];
+        }
+        groups[group].push(requirement);
+        return groups;
+      }, {}) : 
+    {};
+
+    // Order the status groups by priority
+  const orderedStatusGroups = groupByGroup ? 
+  Object.keys(groupedReqs).sort((a, b) => {
+    return (statusOrder[a] || 999) - (statusOrder[b] || 999);
+  }) : 
+  [];
+
+  //console.log(orderedStatusGroups);
+
+     // Helper function to get a background color for each status group
+  const getGroupColor = (status: string) => {
+    switch (status) {
+      case 'Personal': return "bg-white";
+      case 'Group': return "bg-blue-50";
+      default: return "bg-white";
+    }
+  };
+
+
 
   if (!roleChecked) return <div className="text-black p-4">Loading...</div>; // Prevent render until role is known
 
@@ -179,7 +325,7 @@ const MainPage: React.FC = () => {
         <h1 className="text-[2rem] font-bold">{getPageTitle()}</h1>
       </div>
       <div key="2">
-      <form>
+        <form>
           <fieldset>
             <legend className="text-black font-semibold text-lg mb-4">Filter Requirements</legend>
             
@@ -258,13 +404,103 @@ const MainPage: React.FC = () => {
                   onChange={(e) => setEndDate(e.target.value)}
                 />
               </div>
+              </div>
+
+
+            {/* Grouping toggle */}
+            <div className="mt-4 ml-2">
+              <label className="flex items-center text-black">
+                <input
+                  type="checkbox"
+                  checked={groupByGroup}
+                  onChange={() => setGroupByGroup(!groupByGroup)}
+                  className="mr-2"
+                />
+                <span>Show Requirements Assigned to my Group(s)</span>
+              </label>
             </div>
-          </fieldset> 
+        </fieldset> 
         </form>
       </div>
+      
       <main className="overflow-x-auto bg-white shadow-md rounded-lg p-6">
-        <table className="min-w-full text-gray-800">
-          <thead>
+        {groupByGroup ? (
+          // Grouped display
+          <div>
+            {orderedStatusGroups.length > 0 ? (
+              orderedStatusGroups.map(statusGroup => (
+                <div key={statusGroup} className="mb-6">
+                  <h3 className={`text-lg font-bold p-2 ${getGroupColor(statusGroup)} rounded-t-lg border-b border-gray-300 text-black`}>
+                    {statusGroup} ({groupedReqs[statusGroup].length})
+                  </h3>
+                  
+                  <table className={`min-w-full text-black ${getGroupColor(statusGroup)}`}>
+                    <thead>
+                      <tr>
+                        
+                        <th className="px-4 py-2 text-left">
+                          Type</th>
+                          <th className="px-4 py-2 text-left">Requirement ID</th>
+                        <th className="px-4 py-2 text-left">
+                          Report Date
+                          <button onClick={() => handleSort("requirement_submit_date")} className="px-4 py-2 text-left">
+                            <span>{order["requirement_submit_date"] >= 0 ? '>' : '<'}</span>
+                          </button>
+                        </th>
+                        <th className="px-4 py-2 text-left">Status</th>
+                        <th className="px-4 py-2 text-left">Submitter ID</th>
+                        {statusGroup === "Group" && <th className="px-4 py-2 text-left">Claim</th>}
+                        <th className="px-4 py-2 text-left">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {groupedReqs[statusGroup].map((u, index) => (
+                        <tr key={index} className="border-t border-gray-200">
+                          {isITSupport && (
+                            <td className="px-4 py-2">
+                              {u.requirementType === "received" ? "Assigned to me" : "Sent"}
+                            </td>
+                          )}
+
+                  <td className="px-4 py-2">{u.requirement_id}</td>
+                  <td className="px-4 py-2">{String(u.requirement_submit_date)}</td>
+                  <td className="px-4 py-2">{u.requirement_status}</td>
+                  <td className="px-4 py-2">{u.submitter_id}</td>
+                  {statusGroup === "Group" &&<td className="px-4 py-2">
+                                  <button
+                                    onClick={() => handleClaim(u.assigned_to_id, u.docId, u.submitter_id)}
+                                    className="w-full bg-red-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                                    type="button"
+                                  >
+                                    Claim
+                                  </button>
+                                </td>}
+                  <td className="px-4 py-2">
+                          
+                          <button
+                                onClick={() => handleRequirement(u.requirement_id)}
+                                className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                                type="button"
+                              >
+                              More
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ))
+            ) : (
+              <div className="text-center text-black py-8">
+                No incidents found matching your criteria
+              </div>
+            )}
+          </div>
+
+        ) : (
+      <table className="min-w-full text-gray-800">
+      <thead>
             <tr>
               {/* Type column only for Admin/IT users */}
               {(isAdmin || isITSupport) && (
@@ -334,12 +570,13 @@ const MainPage: React.FC = () => {
                   No requirements found matching your criteria
                 </td>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </main>
+        )}
+      
+        </tbody>
+      </table>
+    )}
+    </main>
     </div>
-  );
-}
-
+    );
+  }
 export default MainPage;

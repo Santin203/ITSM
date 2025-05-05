@@ -39,6 +39,23 @@ export async function getUsersData() {
     return usersData;
   }
 
+  export async function getCurrUserId() {
+    const currUser = auth.currentUser;
+    if (currUser) {
+    const uid = currUser.uid;
+    const docRef = doc(db, "Users", uid);
+    const docSnap = await getDoc(docRef);
+    
+    const data = docSnap.data();
+    if(data)
+    {
+      const usersData = docSnap.data()["id"];
+      return(usersData);
+    }
+    return(0);
+    }
+  }
+
   export async function getAdminsData() {
     const usersRef = collection(db, "Users");
     const usersCol = query(usersRef, where("rol", "!=", "No access"));
@@ -46,6 +63,15 @@ export async function getUsersData() {
     const usersData = usersSnapshot.docs.map(doc => [doc.data(), doc.id]);
     return usersData;
   };
+
+  export async function getITAdminsData() {
+    const usersRef = collection(db, "Users");
+    const usersCol = query(usersRef, where("rol", 'array-contains-any', ['Admin', 'IT']));
+    const usersSnapshot = await getDocs(usersCol);
+    const usersData = usersSnapshot.docs.map(doc => [doc.data(), doc.id]);
+    return usersData;
+  };
+
 
 
 export async function getUsersDataDic() {
@@ -60,6 +86,29 @@ export async function setUserRole(newRole, userDocID) {
     const batch = writeBatch(db);
     const docRef = doc(db, "Users", String(userDocID));
     batch.update(docRef, {"rol": newRole});
+    await batch.commit();
+    return(0);
+  }
+  catch
+  {
+    return(1);
+  }
+}
+
+export async function setAssignedToTicket(newAssignationID, ticketDocID, ticketType) {
+  try{
+    const batch = writeBatch(db);
+    const type =  ticketType === "Requirement" ? "Requirements" : "Incidents"
+    const docRef = doc(db, type, String(ticketDocID));
+    batch.update(docRef, {"assigned_to_id": newAssignationID});
+    if(type[0] === "R")
+    {
+      batch.update(docRef, {"requirement_status": "Assigned"});
+    }
+    else if(type[0] === "I")
+    {
+      batch.update(docRef, {"incident_status": "Assigned"});
+    }
     await batch.commit();
     return(0);
   }
@@ -541,6 +590,62 @@ export async function getCurrUserRequirementsData()
   }
 }
 
+export async function getCurrGroupRequirementsData() 
+{
+  const currUser = auth.currentUser;
+  if (currUser) {
+    const uid = currUser.uid;
+    const docRef = doc(db, "Users", uid);
+    const docSnap = await getDoc(docRef);
+    
+    const data = docSnap.data();
+    if(data)
+    {
+      const usersData2 = docSnap.data()["groups"];
+      const usersData = usersData2.filter(item => item !== -1);
+      
+      const requirementsRef = collection(db, "Requirements");
+      const usersRequirementsCol = query(requirementsRef, where("assigned_to_id", "in", usersData));
+      const usersRequirementsSnapshot = await getDocs(usersRequirementsCol);
+      const requirementsData = usersRequirementsSnapshot.docs.map(doc => [doc.data(), doc.id]);
+      
+      if(requirementsData)
+      {
+    
+        return requirementsData;
+      }
+    } 
+  }
+}
+
+export async function getCurrGroupIncidentsData() 
+{
+  const currUser = auth.currentUser;
+  if (currUser) {
+    const uid = currUser.uid;
+    const docRef = doc(db, "Users", uid);
+    const docSnap = await getDoc(docRef);
+    
+    const data = docSnap.data();
+    if(data)
+    {
+      const usersData2 = docSnap.data()["groups"];
+      const usersData = usersData2.filter(item => item !== -1);
+      
+      const requirementsRef = collection(db, "Incidents");
+      const usersRequirementsCol = query(requirementsRef, where("assigned_to_id", "in", usersData));
+      const usersRequirementsSnapshot = await getDocs(usersRequirementsCol);
+      const requirementsData = usersRequirementsSnapshot.docs.map(doc => [doc.data(), doc.id]);
+      
+      if(requirementsData)
+      {
+    
+        return requirementsData;
+      }
+    } 
+  }
+}
+
 export async function getRequirementwithId(i_id)
 {
   const requirementsRef = collection(db, "Requirements");
@@ -839,5 +944,31 @@ export async function getUserDatawithDocId(docId) {
   } catch (error) {
     console.error("Error fetching user by docId:", error);
     return null;
+  }
+}
+
+
+
+export async function  getUnassignedRequirementsData()
+{
+  const requirementsRef = collection(db, "Requirements");
+  const usersRequirementsCol = query(requirementsRef, where("assigned_to_id", "==", Number(-1)));
+  const usersRequirementsSnapshot = await getDocs(usersRequirementsCol);
+  const requirementsData = usersRequirementsSnapshot.docs.map(doc => [doc.data(), doc.id]);
+  if(requirementsData)
+  {
+    return requirementsData;
+  }
+}
+
+export async function getUnassignedIncidentsData()
+{
+  const incidentsRef = collection(db, "Incidents");
+  const usersIncidentsCol = query(incidentsRef, where("assigned_to_id", "==", Number(-1)));
+  const usersIncidentsSnapshot = await getDocs(usersIncidentsCol);
+  const incidentsData = usersIncidentsSnapshot.docs.map(doc => [doc.data(), doc.id]);
+  if(incidentsData)
+  {
+    return incidentsData;
   }
 }

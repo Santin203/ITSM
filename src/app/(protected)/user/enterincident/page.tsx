@@ -133,6 +133,10 @@ export default function IncidentEntryPage() {
           resoldate.setMonth(1);
           resoldate.setDate(1);
 
+          
+
+         
+
           const response = await addIncidents({
             additional_details: formData.additional_details,
             business_impact: formData.business_impact,
@@ -144,7 +148,7 @@ export default function IncidentEntryPage() {
             incident_resolution_date: Timestamp.fromDate(resoldate),
             incident_start_date: Timestamp.fromDate(new Date(startDate)),
             incident_status:statuss,
-            assigned_to_id: formData.assigned_to_id,
+            assigned_to_id: formData.assigned_to_id === "" ? -1 : Number(formData.assigned_to_id),
             organization: organization,
             reporter_id: user_id,
             root_cause: formData.root_cause,
