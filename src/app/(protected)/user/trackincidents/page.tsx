@@ -34,6 +34,7 @@ const MainPage: React.FC = () => {
   const [date, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [status, setStatus] = useState("");
+  const [curr_id, setCurrId] = useState();
   const [isITSupport, setIsITSupport] = useState(false);
   const [incidentTypeFilter, setIncidentTypeFilter] = useState("all"); // "all", "sent", or "received"
   const [roleChecked, setRoleChecked] = useState(false);// Wait for role to be determined
@@ -57,6 +58,8 @@ const MainPage: React.FC = () => {
   
 
   const handleFetchAll = async (): Promise<void> => {
+    const user_id = await getCurrUserId();
+    setCurrId(user_id);
     if (isITSupport) {
       // IT users get both sent and received incidents
       const incidentsData = await getITUserIncidentsData();
@@ -175,7 +178,7 @@ const MainPage: React.FC = () => {
   };
 
    // Filtered data
-   const filteredGroupRequirements = groupRequirements.filter((u) => {
+   const filteredGroupIncidents = groupRequirements.filter((u) => {
     // Filter by requirement type if it's an admin or IT support
     if ((isITSupport) && incidentTypeFilter !== "all") {
       if (incidentTypeFilter === "sent" && u.incidentType !== "sent") return false;
@@ -183,7 +186,7 @@ const MainPage: React.FC = () => {
     }
     
     // Filter by status
-    const matchesStatus = status === "" || String(u.incident_status) === String(status);status
+    const matchesStatus = status === "" || String(u.incident_status) === String(status);
     // Filter by process type
     //const matchesProcessType = process_type === "" || String(u.process_type) === String(process_type);process_type
     // Filter by date range
@@ -193,16 +196,6 @@ const MainPage: React.FC = () => {
   
 
   const sortedIncidents = [...filteredIncidents].sort((a, b) => {
-    // Always prioritize sorting by status first
-    if (a.incident_status !== b.incident_status) {
-      // Get the order value for each status with type safety
-      const orderA = statusOrder[a.incident_status] !== undefined ? statusOrder[a.incident_status] : 999;
-      const orderB = statusOrder[b.incident_status] !== undefined ? statusOrder[b.incident_status] : 999;
-      
-      // Sort by the defined status order
-      return orderA - orderB;
-    }
-    
     // If statuses are the same, use other sorting criteria
     for (const col in order) {
       if (order[col as keyof Order] !== 0) {
@@ -235,9 +228,13 @@ const MainPage: React.FC = () => {
     }) : 
     [];
 
-    
+    const together = [...filteredIncidents, ...filteredGroupIncidents].filter(
+      (obj, index, self) =>
+        index === self.findIndex((o) => o.incident_id === obj.incident_id)
+    );
+    console.log(together);
 
-    const sortedGroupRequirements = [...filteredIncidents, ...filteredGroupRequirements].sort((a, b) => {
+    const sortedGroupRequirements = together.sort((a, b) => {
       for (const col in order) {
         if (order[col as keyof Order] !== 0) {
           if (typeof (a as any)[col] === "string" && typeof (b as any)[col] == "string") {
@@ -602,13 +599,21 @@ const MainPage: React.FC = () => {
                         <td className="px-4 py-2">{u.incident_status}</td>
                         <td className="px-4 py-2">{u.submitter_id}</td>
                         {statusGroup === "Group" &&<td className="px-4 py-2">
-                                  <button
+                    {u.submitter_id === curr_id ? <button
+                                    onClick={() => handleClaim(u.assigned_to_id, u.docId, u.submitter_id)}
+                                    className="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                                    type="button"
+                                    disabled={true}
+                                  >
+                                    Claim
+                                  </button> :  <button
                                     onClick={() => handleClaim(u.assigned_to_id, u.docId, u.submitter_id)}
                                     className="w-full bg-red-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                                     type="button"
                                   >
                                     Claim
-                                  </button>
+                                  </button>}
+
                                 </td>}
                         <td className="px-4 py-2">
                                 <button

@@ -1,7 +1,8 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { getCookie } from '../../../hooks/cookies';
-import { getUnassignedRequirementsData, getUnassignedIncidentsData, getUserDatawithId, setAssignedToTicket, getITAdminsData } from '../../../hooks/db.js';
+import { getUnassignedRequirementsData, getUnassignedIncidentsData, 
+  getUserDatawithId, setAssignedToTicket, getITAdminsData, getAllGroups, getCurrUserId } from '../../../hooks/db.js';
 type Requirement = {
   reporter_id:number,
   report_date:string,
@@ -11,6 +12,12 @@ type Requirement = {
   ticketType:string,
   reporter_name:string,
   docID:string
+}[];
+
+
+type Group = {
+  name:string,
+  id:number
 }[];
 
 type Order = {
@@ -34,7 +41,9 @@ const MainPage: React.FC = () => {
 
   const [uid, setUid] = useState("");
   const [requirements, setRequirements] = useState<Requirement>([]);
-  const [order, setOrder] = useState<Order>({requirement_id: 0, requirement_submit_date: 0, requirement_status: 0, reporter_id: 0, ticketType: 0, reporter_name:0});
+  const [groups, setGroups] = useState<Group>([]);
+  const [order, setOrder] = useState<Order>({
+    requirement_id: 0, requirement_submit_date: 0, requirement_status: 0, reporter_id: 0, ticketType: 0, reporter_name:0});
   const [date, setStartDate] = useState("");
   const [assignableUsers, setAssignableUsers] = useState<User>([]);
   const [endDate, setEndDate] = useState("");
@@ -43,7 +52,6 @@ const MainPage: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isITSupport, setIsITSupport] = useState(false);
   const [roleChecked, setRoleChecked] = useState(false); // Wait for role to be determined
-
   const [formData, setFormData] = useState({
     Reporter: ""
   });
@@ -54,11 +62,14 @@ const MainPage: React.FC = () => {
       setIsAdmin(roleCookie?.value === "Admin");
       setIsITSupport(roleCookie?.value === "IT");
       setRoleChecked(true); // Set roleChecked to true after checking role
+      
     }
     fetch();
     }, []);
 
   
+
+
   const handleFetchRequirements = async (): Promise<Requirement> => { 
     const requirementsData = await getUnassignedRequirementsData();
       if(requirementsData && requirementsData.length > 0) {
@@ -98,6 +109,27 @@ const MainPage: React.FC = () => {
       const { name, value } = e.target;
       setFormData((prev) => ({ ...prev, [name]: value }));
     };
+
+    const handleFetchGroups = async()=>
+      {
+        const groups = await getAllGroups();
+          if(groups && groups.length > 0) {
+            const gs = groups.map((u) => {
+              return {
+                id: (u as any)["id"],
+                name: (u as any)["name"]
+              };
+            });
+  
+
+            setGroups(gs);
+            
+          } else {
+            console.log("No groups retrieved.");
+            setGroups([]);
+          }
+      }
+    
    
 
   const handleFetchIncidents = async(): Promise<Requirement>=>
@@ -149,6 +181,8 @@ const MainPage: React.FC = () => {
             docID: (u as any)[1]
           };
         });
+        
+        
         setAssignableUsers(itadmins);
       }
       else
@@ -189,10 +223,14 @@ const MainPage: React.FC = () => {
 
         }
       }
+      await handleFetchGroups();
       await handleFetchITAdmins();
+      
+      
     }
     if (uid === "") {
       fetch();
+      
     }
   });
 
@@ -498,11 +536,11 @@ window.location.reload();
                 <select name="assigner" id="assigner"
                   onChange={(e) => handleChangeAssignedTo(Number(e.target.value), -1, u.docID, u.ticketType, u.reporter_id)}>
                   <optgroup label="Select Group to Assign Ticket">
-                  <option defaultChecked value="-1">Triage Group</option>
-                    <option value="-4">Networking Team</option>
-                    <option value="-5">Architecture Team</option>
-                    <option value="-6">Cybersecurity Team</option>
-                  </optgroup>
+                  {groups.length > 0 ? (
+                  groups.map((v, index) => (
+                    v.id === -1 ? <option defaultChecked key={index} value={v.id}>{v.name}</option>:
+                     <option key={index} value={v.id}>{v.name}</option>))) : "No groups to show." }
+                   </optgroup>
                   <optgroup label="Select Whom to Assign Ticket">
                     {assignableUsers.map((v,index)=>(
                       v.id !== u.reporter_id &&

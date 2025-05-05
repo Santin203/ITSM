@@ -29,6 +29,7 @@ const MainPage: React.FC = () => {
   const [endDate, setEndDate] = useState("");
   const [status, setStatus] = useState("");
   const [process_type, setProcessType] = useState("");
+  const [curr_id, setCurrId] = useState();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isITSupport, setIsITSupport] = useState(false);
   const [requirementTypeFilter, setRequirementTypeFilter] = useState("all"); // "all", "sent", "received"
@@ -47,6 +48,8 @@ const MainPage: React.FC = () => {
   }, []);
 
   const handleFetchAll = async (): Promise<void> => { 
+    const user_id = await getCurrUserId();
+    setCurrId(user_id);
     if (isAdmin || isITSupport) {
       // For Admin and IT users, fetch both sent and received requirements
       const requirementsData = await getITUserRequirementsData();
@@ -104,6 +107,7 @@ const MainPage: React.FC = () => {
         await handleFetchAll();
         await handleFetchGroupRequirements();
       }
+      console.log(curr_id);
     }
 
     if (uid === "") {
@@ -165,9 +169,13 @@ const MainPage: React.FC = () => {
   });
 
 
-  //console.log("f",groupRequirements)
+  const together = [...filteredRequirements, ...filteredGroupRequirements].filter(
+    (obj, index, self) =>
+      index === self.findIndex((o) => o.requirement_id === obj.requirement_id)
+  );
+  
   // Ordenación dinámica
-  const sortedGroupRequirements = [...filteredRequirements, ...filteredGroupRequirements].sort((a, b) => {
+  const sortedGroupRequirements = together.sort((a, b) => {
     for (const col in order) {
       if (order[col as keyof Order] !== 0) {
         if (typeof (a as any)[col] === "string" && typeof (b as any)[col] == "string") {
@@ -179,6 +187,8 @@ const MainPage: React.FC = () => {
     }
     return 0;
   });
+
+
 
   const handleFetchGroupRequirements = async () =>{
     const requirementsData = await getCurrGroupRequirementsData();
@@ -230,7 +240,7 @@ const MainPage: React.FC = () => {
 
 
   const handleClaim = async(assignedCurrent: number, ticketDocID:string, reporterID: number) => {    
-      const curr_id = await getCurrUserId();
+    const curr_id = await getCurrUserId();
     if(curr_id === assignedCurrent)
       return 0;
     else{
@@ -304,7 +314,6 @@ const MainPage: React.FC = () => {
   }) : 
   [];
 
-  //console.log(orderedStatusGroups);
 
      // Helper function to get a background color for each status group
   const getGroupColor = (status: string) => {
@@ -467,13 +476,21 @@ const MainPage: React.FC = () => {
                   <td className="px-4 py-2">{u.requirement_status}</td>
                   <td className="px-4 py-2">{u.submitter_id}</td>
                   {statusGroup === "Group" &&<td className="px-4 py-2">
-                                  <button
+                    {u.submitter_id === curr_id ? <button
+                                    onClick={() => handleClaim(u.assigned_to_id, u.docId, u.submitter_id)}
+                                    className="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                                    type="button"
+                                    disabled={true}
+                                  >
+                                    Claim
+                                  </button> :  <button
                                     onClick={() => handleClaim(u.assigned_to_id, u.docId, u.submitter_id)}
                                     className="w-full bg-red-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                                     type="button"
                                   >
                                     Claim
-                                  </button>
+                                  </button>}
+
                                 </td>}
                   <td className="px-4 py-2">
                           
