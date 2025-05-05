@@ -42,10 +42,11 @@ const MainPage: React.FC = () => {
   const [ticketType, setTicketType] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [isITSupport, setIsITSupport] = useState(false);
-  //const [requirementTypeFilter, setRequirementTypeFilter] = useState("all"); // "all", "sent", "received"
   const [roleChecked, setRoleChecked] = useState(false); // Wait for role to be determined
 
-
+  const [formData, setFormData] = useState({
+    Reporter: ""
+  });
   // Check user role when component mounts
   useEffect(() => {
     const fetch = async (): Promise<void> => {    
@@ -92,6 +93,12 @@ const MainPage: React.FC = () => {
       return([]);
     }
   };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { name, value } = e.target;
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    };
+   
 
   const handleFetchIncidents = async(): Promise<Requirement>=>
   {
@@ -199,13 +206,16 @@ const MainPage: React.FC = () => {
     // Filter by status
     const matchesStatus = status === "" || String(u.status) === String(status);status
 
+    // Filter by reporter
+    const matchesReporter = formData["Reporter"] === "" || String(u.reporter_name).toLowerCase().includes(formData["Reporter"].toLowerCase());
+
     // Filter by process type
     const matchesTicketType = ticketType === "" || String(u.ticketType) === String(ticketType);ticketType;
     
     // Filter by date range
     const matchesDate = date === "" && endDate === "" || compareDates(date, u.report_date, endDate);
     
-    return matchesStatus && matchesDate && matchesTicketType;
+    return matchesStatus && matchesDate && matchesTicketType && matchesReporter;
   });
   
 
@@ -327,7 +337,8 @@ window.location.reload();
               <label htmlFor="ticketType" className="block mb-2">
               <p className="text-black mt-2">Search for Ticket Type</p>
               </label>
-                <select
+              
+                {/* <select
                   className="text-black border rounded px-4 py-2 mb-4 w-medium"
                   value={ticketType}
                   onChange={(e) => setTicketType(e.target.value)}
@@ -335,30 +346,81 @@ window.location.reload();
                   <option defaultChecked value="">All</option>
                   <option value="Incident">Incident</option>
                   <option value="Requirement">Requirement</option>
-                </select>
-              </div>
+                </select> */}
 
+                <div className="flex space-x-8 mb-2">
+                  <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="ticketType"
+                        value="all"
+                        checked={ticketType === ""}
+                        onChange={() => setTicketType("")}
+                        className="mr-2"
+                      />
+                      <span className="text-black">All</span>
+                    </label>
+                    
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="incidentType"
+                        value="sent"
+                        checked={ticketType === "Incident"}
+                        onChange={() => setTicketType("Incident")}
+                        className="mr-2"
+                      />
+                      <span className="text-black">Incidents</span>
+                    </label>
+                    
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="incidentType"
+                        value="received"
+                        checked={ticketType === "Requirement"}
+                        onChange={() => setTicketType("Requirement")}
+                        className="mr-2"
+                      />
+                      <span className="text-black">Requirements</span>
+                    </label>
+                  </div>
+              </div>
+              
+              <div className="flex items-end space-x-10 ml-2">
               <div>
-              <label htmlFor="requirement_status" className="block mb-2">
-              <p className="text-black mt-2">Search for Ticket Status:</p>
-              </label>
-                <select
-                  className="text-black border rounded px-4 py-2 mb-4 w-medium"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                >
-                  <option defaultChecked value="">All</option>
-                  <option value="Sent">Sent</option>
-                  <option value="Assigned">Assigned</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Escalated">Escalated</option>
-                  <option value="Resolved">Resolved</option>
-                </select>
+                  <label htmlFor="Reporter" className="block mb-2">
+                    <span className="text-black">Search for Reporter:</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="Reporter"
+                    name="Reporter"
+                    onChange={handleChange}
+                    value={formData.Reporter}
+                    className="text-black border rounded px-4 py-2 mb-4 w-medium h-11"
+                  />
+              </div>
+              <div>
+                <label htmlFor="requirement_status" className="block mb-2">
+                <p className="text-black mt-2">Search for Status:</p>
+                </label>
+                  <select
+                    className="text-black border rounded px-4 py-2 mb-4 w-medium h-11"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                  >
+                    <option defaultChecked value="">All</option>
+                    <option value="Sent">Sent</option>
+                    <option value="Assigned">Assigned</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Escalated">Escalated</option>
+                    <option value="Resolved">Resolved</option>
+                  </select>
               </div>
             
-            <div className="flex space-x-4 mt-2">
                 <div>
-                  <label className="block text-black mt-2">Start Date:</label>
+                  <label className="block text-black mt-2 mb-2">Start Date:</label>
                   <input
                     type="date"
                     className="text-black border rounded px-4 py-2 mb-4 w-medium"
@@ -367,7 +429,7 @@ window.location.reload();
                   />
                 </div>
                 <div>
-                <label className="block text-black mt-2">End Date</label>
+                <label className="block text-black mt-2 mb-2">End Date:</label>
                 <input
                   type="date"
                   className="text-black border rounded px-4 py-2 mb-4 w-medium"
@@ -443,6 +505,7 @@ window.location.reload();
                   </optgroup>
                   <optgroup label="Select Whom to Assign Ticket">
                     {assignableUsers.map((v,index)=>(
+                      v.id !== u.reporter_id &&
                       <option key={index} value={Number(v.id)}>{v.name +" "+ v.last_name_1}</option>
                     ))}
                   </optgroup>

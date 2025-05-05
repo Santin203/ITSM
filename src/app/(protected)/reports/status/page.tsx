@@ -266,7 +266,7 @@ const StatusReportPage: React.FC = () => {
           
           {/* Start Date Filter */}
           <div>
-            <label className="block text-gray-700 font-medium mb-0.5 text-sm">Start Date <span className="text-xs text-gray-500">(Optional)</span></label>
+            <label className="block text-gray-700 font-medium mb-0.5 text-sm">Start Date </label>
             <input
               type="date"
               value={startDate}
@@ -277,7 +277,7 @@ const StatusReportPage: React.FC = () => {
           
           {/* End Date Filter */}
           <div>
-            <label className="block text-gray-700 font-medium mb-0.5 text-sm">End Date <span className="text-xs text-gray-500">(Optional)</span></label>
+            <label className="block text-gray-700 font-medium mb-0.5 text-sm">End Date </label>
             <input
               type="date"
               value={endDate}

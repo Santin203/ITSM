@@ -43,6 +43,7 @@ const CreateGroupPage: React.FC = () => {
               return {
                 id: userData.id,
                 name: displayName,
+                rol: userData.rol[0],
                 email: userData.email || '',
                 firebaseId: userId
               };
@@ -145,7 +146,8 @@ const CreateGroupPage: React.FC = () => {
                 />
                 {filteredMembers.length > 0 && (
                   <div className="border rounded-lg p-2 bg-gray-50 max-h-40 overflow-y-auto">
-                    {filteredMembers.map((member) => (
+                    {filteredMembers.map((member) => ( 
+                      member.rol !== "No access" &&
                       <div
                         key={member.name}
                         className="p-2 cursor-pointer hover:bg-gray-200 text-black rounded"
