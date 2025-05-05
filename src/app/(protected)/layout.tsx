@@ -5,19 +5,18 @@ import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import {
     BellIcon,
+    ClipboardDocumentListIcon,
     ClipboardIcon,
     DocumentChartBarIcon,
     HomeIcon,
     UserGroupIcon,
-    UsersIcon,
-    ClipboardDocumentListIcon
+    UsersIcon
 } from "@heroicons/react/24/outline";
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { auth } from '../../firebaseConfig';
 import { getCurrUserData, sleep } from '../../hooks/db';
 import { useAuth } from '../../hooks/useAuth';
-import { create } from "domain";
 
 
 interface LayoutProps {
@@ -95,7 +94,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="flex min-h-screen font-sans bg-gray-100">
             {/* Side Bar */}
             <aside style={{
-                width: "220px",
+                width: "230px",
                 background: "linear-gradient(to bottom, #224089 0%, #203e91 100%)",
                 padding: "20px",
                 color: "#FFFFFF",

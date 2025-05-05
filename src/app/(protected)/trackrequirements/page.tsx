@@ -34,7 +34,7 @@ const MainPage: React.FC = () => {
   const [isITSupport, setIsITSupport] = useState(false);
   const [requirementTypeFilter, setRequirementTypeFilter] = useState("all"); // "all", "sent", "received"
   const [roleChecked, setRoleChecked] = useState(false); // Wait for role to be determined
-  const [groupByGroup, setGroupByGroup] = useState(true); // New state for grouping
+  const [groupByGroup, setGroupByGroup] = useState(false); // New state for grouping
 
   // Check user role when component mounts
   useEffect(() => {
@@ -417,7 +417,7 @@ const MainPage: React.FC = () => {
 
 
             {/* Grouping toggle */}
-            <div className="mt-4 ml-2">
+            {(isITSupport || isAdmin) && (<div className="mt-4 ml-2">
               <label className="flex items-center text-black">
                 <input
                   type="checkbox"
@@ -427,7 +427,8 @@ const MainPage: React.FC = () => {
                 />
                 <span>Show Requirements Assigned to my Group(s)</span>
               </label>
-            </div>
+            </div>)}
+            
         </fieldset> 
         </form>
       </div>

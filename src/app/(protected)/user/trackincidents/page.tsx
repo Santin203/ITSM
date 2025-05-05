@@ -38,7 +38,7 @@ const MainPage: React.FC = () => {
   const [isITSupport, setIsITSupport] = useState(false);
   const [incidentTypeFilter, setIncidentTypeFilter] = useState("all"); // "all", "sent", or "received"
   const [roleChecked, setRoleChecked] = useState(false);// Wait for role to be determined
-  const [groupChecked, setGroupChecked] = useState("group_status");// Wait for role to be determined
+  const [groupChecked, setGroupChecked] = useState("all");// Wait for role to be determined
 
   const [formData, setFormData] = useState({
     title: "",
